@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Secrets and local config (never commit)
+.env
+*.key
+*.pem
+*token*
+
+# Large generated media: link the demo video from the README instead
+*.mp4
+*.avi
+*.mov
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
