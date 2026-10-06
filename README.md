@@ -2,7 +2,7 @@
 
 TurtleBot3 with 2D LiDAR and camera in MuJoCo. The robot navigates a room with obstacles and visually docks to an ArUco-marked charging station. The controller uses the estimated state only; simulator ground truth is used for evaluation only.
 
-Status: work in progress (simulation first, hardware optional afterwards).
+Status: work in progress (simulation first, hardware optional afterwards). Running notes with measured results: [docs/findings.md](docs/findings.md).
 
 ## 1. Overview
 <!-- Task, platform, what the pipeline does end to end. -->
