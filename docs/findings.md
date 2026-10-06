@@ -74,9 +74,37 @@ Controllability of the tracking-error model:
 
 The model loses controllability only when the reference speed is zero in both components, so the final docking approach must not let the reference speed drop exactly to zero under the linear tracker.
 
+## Stage 2: driver validation (Waffle Pi, wheel-speed loop on)
+
+Code: `drivers/wheel_speed_controller.py`, `drivers/mujoco_tb3.py`; run: `notebooks/02_driver_validation.ipynb`. Control period 0.02 s, constant desired wheel speeds for 8 s, statistics over the last 1 s. The loop logic is also tested against a stand-in plant in `tests/test_wheel_speed_controller.py`; the MuJoCo results below are the real validation.
+
+Straight driving:
+
+| Desired [rad/s] | Measured wheel speed L / R [rad/s] | True v [m/s] | Odometry v [m/s] | True v / odometry v |
+|---|---|---|---|---|
+| 0.5 | 0.50 / 0.50 | 0.016 | 0.017 | 0.99 |
+| 1.0 | 1.00 / 1.00 | 0.032 | 0.033 | 0.98 |
+| 2.0 | 1.99 / 2.01 | 0.058 | 0.066 | 0.88 |
+| 3.0 | 3.00 / 3.01 | 0.085 | 0.099 | 0.85 |
+| 5.0 | 5.00 / 4.99 | 0.141 | 0.165 | 0.86 |
+
+In-place spin:
+
+| Desired [rad/s] | Measured wheel speed L / R [rad/s] | True yaw rate [rad/s] | Odometry yaw rate, nominal track 0.288 m [rad/s] | Effective track [m] |
+|---|---|---|---|---|
+| 0.5 | -0.50 / 0.50 | 0.093 | 0.115 | 0.353 |
+| 1.0 | -1.00 / 1.01 | 0.167 | 0.231 | 0.398 |
+| 2.0 | -2.00 / 2.01 | 0.318 | 0.458 | 0.416 |
+
+Observations:
+
+1. The wheel-speed loop tracks the desired speed to within 0.01 rad/s, including 0.5 and 1.0 rad/s, which the raw actuator could not reach because of its dead zone.
+2. The odometry speed scale is not constant: about 1.0 at wheel speeds of 1 rad/s or less and about 0.86 at 2 rad/s or more, with the change between 1 and 2 rad/s. The effective track width during spins grows with spin rate (0.35 to 0.42 m, nominal 0.288 m). The cause is not identified.
+3. Not covered: arc motions (simultaneous forward and turning motion), repeated runs. A constant calibration from these tables is therefore not yet justified.
+
 ## Open items
 
 - Confirm the robot (Burger or Waffle Pi) held by the hardware lab.
 - Camera extrinsics (mounting offset) are ignored in the stage-1 measurement models and belong to the perception stage.
-- Calibrate or model the odometry scale and effective wheel separation, and repeat the drive characterisation over a finer command sweep.
-- Implement the driver layer, the sensors (LiDAR, camera, encoders), the room with obstacles and the ArUco marker.
+- Characterise odometry over arc motions inside the planned operating envelope, then either calibrate by speed range or absorb the residual in the EKF process noise; measure dead-reckoning error with and without calibration.
+- Add the sensors (LiDAR, camera), the room with obstacles and the ArUco marker. Encoders are already provided by the driver.
