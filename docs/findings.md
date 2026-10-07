@@ -102,6 +102,31 @@ Observations:
 2. The odometry speed scale is not constant: about 1.0 at wheel speeds of 1 rad/s or less and about 0.86 at 2 rad/s or more, with the change between 1 and 2 rad/s. The effective track width during spins grows with spin rate (0.35 to 0.42 m, nominal 0.288 m). The cause is not identified.
 3. Not covered: arc motions (simultaneous forward and turning motion), repeated runs. A constant calibration from these tables is therefore not yet justified.
 
+## Stage 3: scene, ArUco marker and marker pose
+
+Code: `sim/scene.py`, `perception/aruco.py`, `perception/marker_pose.py`; checks: `tests/test_scene.py`, `tests/test_marker_pose.py`, `notebooks/03_scene_check.ipynb`.
+
+Scene check in MuJoCo (OpenCV 5.0.0, `notebooks/03_scene_check.ipynb`): the generated room, two obstacles and the charging station load and render. The marker texture is detected in 3 of 8 viewing azimuths (0, 45 and 315 degrees, the views in front of the marker) with the default orientation, and in none with the mirrored texture, so the default texture orientation is correct. Views from the side or from behind are not expected to detect it. The floor reflects a faint mirrored copy of the marker (floor reflectance 0.2, copied from the upstream scene); no false detection was seen.
+
+Marker pose in the robot frame (`estimate_marker_pose`): position of the marker and the direction of its outward normal relative to the robot heading, the same quantities as `h_marker_pose`. The frame conversion was verified on synthetic projections against `h_marker_pose` to 1e-6.
+
+Solver finding: with the locally installed OpenCV 4.3.0, the IPPE planar solver gave reprojection errors of 0.4 to 5 px on exact, noise-free synthetic corners, while the iterative solver recovered the true pose exactly, so the synthetic geometry is right and that solver version is inaccurate. The estimator therefore refines the two IPPE candidates and also tries the iterative solution, and keeps the candidate with the smallest reprojection error. Behaviour with OpenCV 5.0.0 on MuJoCo renders is checked in `notebooks/04_camera_pose_check.ipynb`.
+
+Corner-noise sensitivity of the marker pose (synthetic projections with Gaussian pixel noise, 300 poses per row, marker 0.12 m, camera 48.8 deg vertical field of view at 640x480; these are not MuJoCo renders):
+
+| Corner noise | Distance [m] | Marker width [px] | Position error median / 95% [mm] | Heading error median / 95% [deg] | Heading error above 10 deg |
+|---|---|---|---|---|---|
+| 0.3 px | 0.5 | 127 | 0.5 / 1.6 | 0.3 / 1.0 | 0% |
+| 0.3 px | 0.8 | 79 | 1.6 / 4.3 | 0.8 / 2.9 | 0% |
+| 0.3 px | 1.2 | 53 | 4.1 / 11.6 | 2.0 / 9.7 | 5% |
+| 0.3 px | 1.6 | 40 | 7.8 / 21.9 | 3.4 / 16.8 | 16% |
+| 1.0 px | 0.5 | 127 | 1.8 / 5.4 | 1.1 / 3.3 | 0% |
+| 1.0 px | 0.8 | 79 | 6.1 / 15.9 | 3.1 / 12.0 | 8% |
+| 1.0 px | 1.2 | 53 | 14.3 / 40.4 | 6.8 / 24.9 | 36% |
+| 1.0 px | 1.6 | 40 | 28.2 / 71.8 | 9.7 / 25.2 | 48% |
+
+Consequence for the EKF (a design hypothesis to test, not yet a result): the heading component of the marker pose becomes unreliable at long range and with noisy corners, while the position component stays accurate to a few centimetres. The measurement noise for the heading component should grow with distance, or the heading component should be dropped when the marker appears narrower than roughly 80 px.
+
 ## Open items
 
 - Confirm the robot (Burger or Waffle Pi) held by the hardware lab.

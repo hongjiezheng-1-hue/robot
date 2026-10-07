@@ -1,10 +1,12 @@
 """Scene generation for Track A: a rectangular room, box obstacles and an ArUco-marked charging station.
 
-The generated MJCF includes the unmodified upstream TurtleBot3 model, so the file is written into the
-same folder as that model. All dimensions are configuration values; the defaults are placeholders to
-be replaced by the lab measurements.
+The generated MJCF includes a derived copy of the upstream TurtleBot3 model (the upstream file is left
+untouched) with a camera element added to the base body. Everything is written into the folder of the
+upstream model because the model references its mesh files relatively. All dimensions are configuration
+values; the defaults are placeholders to be replaced by the lab measurements.
 """
 
+import dataclasses
 import math
 import os
 from dataclasses import dataclass
@@ -29,6 +31,25 @@ class SceneConfig:
     marker_border_px: int = 100         # white quiet zone around the marker in the texture
     robot_xml: str = "turtlebot3_waffle_pi.xml"
     marker_texture: str = "aruco_marker.png"
+    camera_name: str = "front"
+    camera_pos: tuple = (0.083, 0.0, 0.107)   # [m] in the robot base frame (placeholder: position of the camera block in the upstream XML)
+    camera_fovy: float = 48.8           # [deg] vertical field of view (placeholder: Raspberry Pi camera v2)
+    camera_width: int = 640
+    camera_height: int = 480
+
+
+_BASE_ANCHOR = '<joint type="free" name="base_joint"/>'
+
+
+def inject_camera(robot_xml_text, cfg):
+    """Return the robot XML with a forward-looking camera added to the base body (x forward, y left, z up)."""
+    if _BASE_ANCHOR not in robot_xml_text:
+        raise ValueError("base joint not found in the robot XML; cannot attach the camera")
+    x, y, z = cfg.camera_pos
+    # xyaxes: image right = robot -y, image up = robot +z, so the camera looks along robot +x
+    camera = (f'{_BASE_ANCHOR}\n      <camera name="{cfg.camera_name}" pos="{x} {y} {z}" '
+              f'xyaxes="0 -1 0 0 0 1" fovy="{cfg.camera_fovy}"/>')
+    return robot_xml_text.replace(_BASE_ANCHOR, camera, 1)
 
 
 def build_scene_xml(cfg):
@@ -84,13 +105,20 @@ def build_scene_xml(cfg):
 """
 
 
-def write_scene(cfg, robot_dir, flip_marker=False, scene_name="scene_track_a.xml"):
-    """Write the marker texture and the scene file into robot_dir; return the scene path."""
+def write_scene(cfg, robot_dir, flip_marker=False, scene_name="scene_track_a.xml", with_camera=True):
+    """Write the marker texture, the derived robot XML (with camera) and the scene into robot_dir; return the scene path."""
     import cv2
     from perception.aruco import make_marker_image
 
     img = make_marker_image(cfg.marker_id, cfg.marker_dictionary, cfg.marker_side_px, cfg.marker_border_px, flip_marker)
     cv2.imwrite(os.path.join(robot_dir, cfg.marker_texture), img)
+    if with_camera:
+        with open(os.path.join(robot_dir, cfg.robot_xml)) as f:
+            derived_name = os.path.splitext(cfg.robot_xml)[0] + "_cam.xml"
+            derived = inject_camera(f.read(), cfg)
+        with open(os.path.join(robot_dir, derived_name), "w") as f:
+            f.write(derived)
+        cfg = dataclasses.replace(cfg, robot_xml=derived_name)
     path = os.path.join(robot_dir, scene_name)
     with open(path, "w") as f:
         f.write(build_scene_xml(cfg))
