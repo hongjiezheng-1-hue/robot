@@ -138,6 +138,68 @@ The trend matches the synthetic study (error grows with distance, heading worst 
 
 Consequence for the EKF (a design hypothesis to test, not yet a result): the heading component of the marker pose becomes unreliable at long range and with noisy corners, while the position component stays accurate to a few centimetres. The measurement noise for the heading component should grow with distance, or the heading component should be dropped when the marker appears narrower than roughly 80 px.
 
+## Stage 4: EKF with fixed and estimated odometry gains (synthetic validation only)
+
+Code: `estimation/ekf.py`, `sim/synthetic.py`; experiments: `experiments/ekf_synthetic.py`, `experiments/ekf_sensitivity.py` (outputs in `results/`); tests: `tests/test_ekf.py`, `tests/test_models.py`.
+
+Design:
+
+- State `[px, py, theta]`. Prediction from encoder odometry `v = s_v v_nom`, `w = s_w w_nom`, where `v_nom, w_nom` use the nominal wheel radius and track width and the gains `s_v, s_w` absorb radius, slip and effective-track errors. Process noise comes from input noise (`floor + relative x |input|`) mapped through the input Jacobian, so it grows with speed.
+- Update with the full marker pose; measurement noise grows with the measured marker distance (position sigma from `d^2 x corner_sigma / (f x L)` plus a floor, heading sigma `0.005 + 0.05 d^2` rad), set from the render study above.
+- Variant A: gains fixed from a calibration. Variant B: the two gains are added to the state (random walk, start at the nominal value 1 with sigma 0.2) and estimated online.
+
+Synthetic plant: unicycle following waypoints, true gains `s_v = 0.86`, `s_w = 0.72` (from the stage-2 MuJoCo measurements, constant here), encoder noise, slip noise with the same model as the filter's, marker pose measured with the filter's noise model while the marker is in view (distance 0.2 to 3 m, within 28 degrees of the heading, robot in front of the marker). Marker visible in about 25% of samples. No obstacles occlude the marker and no heading-flip outliers are included in these runs.
+
+Main comparison (20 runs of 600 s, position and heading RMSE over the second half, mean +/- std over runs):
+
+| Variant | Position RMSE [mm] | Heading RMSE [deg] | ANEES (ideal 3) | NEES inside 95% bound |
+|---|---|---|---|---|
+| A0: nominal gains, no calibration | 3079 +/- 83 | 105 +/- 3.5 | 74959 | 0.01 |
+| A2: gains about 5% off | 294 +/- 27 | 8.3 +/- 0.8 | 35.0 | 0.12 |
+| A2t: as A2, odometry noise inflated 4x | 293 +/- 26 | 8.2 +/- 0.7 | 3.34 | 0.98 |
+| A1: exact gains | 75.5 +/- 23.7 | 2.2 +/- 0.7 | 3.36 | 0.94 |
+| B: gains estimated online | 97.4 +/- 32.3 | 3.1 +/- 1.0 | 2.27 | 0.97 |
+
+The inflation factor of A2t was chosen on separate runs (seeds 100 to 103) as the one whose ANEES is closest to 3. B's final gain estimates are `s_v = 0.858 +/- 0.012` (true 0.86) and `s_w = 0.719 +/- 0.008` (true 0.720).
+
+Findings:
+
+1. The filter implementation is consistent when the model matches (A1: ANEES 3.36, 94% inside the bound).
+2. Inflating the process noise makes a miscalibrated filter honest (ANEES 35 to 3.3) but does not improve its accuracy (294 mm to 293 mm).
+3. B recovers most of the accuracy of an exactly calibrated filter and stays consistent.
+4. Without calibration (A0) the filter is lost: the odometry bias is too large to be corrected by a marker that is visible 25% of the time.
+
+Sensitivity (8 runs per row, second-half RMSE):
+
+| Calibration error of A | A position [mm] | A ANEES | A inside bound |
+|---|---|---|---|
+| 0% | 83.5 | 2.97 | 0.96 |
+| 1% | 90.2 | 4.09 | 0.87 |
+| 2% | 126.5 | 7.74 | 0.60 |
+| 5% | 287.8 | 35.1 | 0.12 |
+| 10% | 588.2 | 144.0 | 0.03 |
+| B (independent of the error) | 111.1 | 2.11 | 0.98 |
+
+| Max detection range | Marker visible | A (5% off) position [mm] | B position [mm] | B ANEES |
+|---|---|---|---|---|
+| 1.5 m | 6% | 409 | 108 | 4.07 |
+| 2.0 m | 12% | 365 | 106 | 2.21 |
+| 3.0 m | 25% | 288 | 111 | 2.11 |
+| 4.0 m | 30% | 284 | 95 | 2.14 |
+
+Mission length, whole-run RMSE including the convergence phase of B (12 runs per row):
+
+| Length | A (5% off) [mm] | A (exact) [mm] | B [mm] |
+|---|---|---|---|
+| 60 s | 185 | 133 | 158 |
+| 120 s | 249 | 104 | 162 |
+| 300 s | 267 | 91 | 131 |
+| 600 s | 279 | 88 | 122 |
+
+Reading the sensitivity results: with exact calibration A is better than B (84 vs 111 mm), B is better in consistency from about 1% calibration error and in position error from about 2%. B's accuracy barely depends on marker visibility down to 6% of samples. B beats a 5%-miscalibrated A at every mission length, with an advantage that grows with length (about 15% at 60 s, 35% at 120 s, 50% at 300 s); it stays behind an exactly calibrated A at every length.
+
+Limits of these results (not yet tested): the true gains are constant in the synthetic plant, while the stage-2 MuJoCo measurements show gains that depend on speed (speed scale about 1.0 at low wheel speed and about 0.86 at 2 rad/s or more; effective track 0.35 to 0.42 m), so neither variant models the real plant exactly; the marker pose noise is Gaussian and consistent with the filter's model, whereas the render study shows heavy-tailed heading errors at long range (gating is implemented but untested); marker occlusion by obstacles is not modelled; no data from the MuJoCo robot has been run through the filter yet.
+
 ## Open items
 
 - Confirm the robot (Burger or Waffle Pi) held by the hardware lab.
