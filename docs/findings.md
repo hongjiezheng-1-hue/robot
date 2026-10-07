@@ -125,6 +125,17 @@ Corner-noise sensitivity of the marker pose (synthetic projections with Gaussian
 | 1.0 px | 1.2 | 53 | 14.3 / 40.4 | 6.8 / 24.9 | 36% |
 | 1.0 px | 1.6 | 40 | 28.2 / 71.8 | 9.7 / 25.2 | 48% |
 
+Marker pose from MuJoCo renders (`notebooks/04_camera_pose_check.ipynb`, OpenCV 5.0.0, MuJoCo 3.15.0, camera placeholders as above): the model contains one camera and the marker was detected at all 36 tested poses (distance about 0.4 to 1.9 m, robot roughly facing the marker within 0.2 rad). Errors against ground truth, 9 poses per band (percentiles are rough):
+
+| Distance [m] | Position error median / 95% [mm] | Heading error median / 95% [deg] |
+|---|---|---|
+| 0.2 to 0.7 | 1.2 / 1.8 | 0.2 / 0.5 |
+| 0.7 to 1.1 | 2.6 / 4.2 | 1.5 / 1.7 |
+| 1.1 to 1.5 | 12.6 / 14.3 | 0.9 / 5.1 |
+| 1.5 to 1.9 | 19.9 / 41.9 | 2.0 / 18.0 |
+
+The trend matches the synthetic study (error grows with distance, heading worst at long range), but the render errors are not equivalent to a single Gaussian corner noise: position error corresponds to about 1 px of synthetic noise while heading error is better than the 1 px synthetic case. A possible cause of the position error is a depth error along the line of sight from a small bias in the apparent marker size; this has not been checked (it needs the error split into along-sight and lateral components). Not covered: distances beyond 1.9 m (the room allows about 3.7 m, where the marker is about 20 px wide), large viewing angles, repeated noisy renders. The range over which the marker is detected is therefore still unknown, and it determines when the EKF receives updates.
+
 Consequence for the EKF (a design hypothesis to test, not yet a result): the heading component of the marker pose becomes unreliable at long range and with noisy corners, while the position component stays accurate to a few centimetres. The measurement noise for the heading component should grow with distance, or the heading component should be dropped when the marker appears narrower than roughly 80 px.
 
 ## Open items
