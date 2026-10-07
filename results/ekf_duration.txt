@@ -1,0 +1,17 @@
+3. mission length: whole-run RMSE (includes the convergence phase of B), A is 5% miscalibrated
+     60 s
+      A (5% miscalibrated):    185.4 mm |   5.63 deg | ANEES     25.68 | inside 0.23
+      A (exact)           :    133.1 mm |   3.65 deg | ANEES      5.00 | inside 0.91
+      B                   :    157.7 mm |   4.73 deg | ANEES      3.79 | inside 0.93
+    120 s
+      A (5% miscalibrated):    248.8 mm |   7.21 deg | ANEES     27.73 | inside 0.19
+      A (exact)           :    104.4 mm |   2.95 deg | ANEES      3.96 | inside 0.94
+      B                   :    162.4 mm |   5.09 deg | ANEES      3.09 | inside 0.96
+    300 s
+      A (5% miscalibrated):    267.3 mm |   7.83 deg | ANEES     32.60 | inside 0.14
+      A (exact)           :     91.0 mm |   2.74 deg | ANEES      3.53 | inside 0.94
+      B                   :    131.2 mm |   4.29 deg | ANEES      2.44 | inside 0.98
+    600 s
+      A (5% miscalibrated):    279.4 mm |   8.02 deg | ANEES     34.47 | inside 0.12
+      A (exact)           :     87.7 mm |   2.60 deg | ANEES      3.29 | inside 0.94
+      B                   :    121.8 mm |   3.96 deg | ANEES      2.20 | inside 0.98

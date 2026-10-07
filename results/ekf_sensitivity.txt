@@ -1,0 +1,21 @@
+8 runs per row, 600 s each, second-half position/heading RMSE
+1. calibration error of the fixed-gain filter (both gains off by +e and -e)
+   e =    0%  A:     83.5 mm |   2.40 deg | ANEES      2.97 | inside 0.96
+   e =    1%  A:     90.2 mm |   2.67 deg | ANEES      4.09 | inside 0.87
+   e =    2%  A:    126.5 mm |   3.74 deg | ANEES      7.74 | inside 0.60
+   e =    5%  A:    287.8 mm |   8.22 deg | ANEES     35.10 | inside 0.12
+   e =   10%  A:    588.2 mm |  16.14 deg | ANEES    144.02 | inside 0.03
+   B (independent of e):    111.1 mm |   3.50 deg | ANEES      2.11 | inside 0.98
+2. marker visibility (maximum detection range)
+   range 1.5 m, marker visible    6% of samples
+      A (5% miscalibrated):    409.3 mm |  12.58 deg | ANEES     54.69 | inside 0.04
+      B                   :    108.0 mm |   3.57 deg | ANEES      4.07 | inside 0.95
+   range 2.0 m, marker visible   12% of samples
+      A (5% miscalibrated):    365.2 mm |  11.03 deg | ANEES     42.82 | inside 0.08
+      B                   :    106.3 mm |   3.48 deg | ANEES      2.21 | inside 0.97
+   range 3.0 m, marker visible   25% of samples
+      A (5% miscalibrated):    287.8 mm |   8.22 deg | ANEES     35.10 | inside 0.12
+      B                   :    111.1 mm |   3.50 deg | ANEES      2.11 | inside 0.98
+   range 4.0 m, marker visible   30% of samples
+      A (5% miscalibrated):    284.0 mm |   7.67 deg | ANEES     35.74 | inside 0.12
+      B                   :     95.1 mm |   2.87 deg | ANEES      2.14 | inside 0.98

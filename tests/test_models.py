@@ -6,7 +6,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-from estimation.models import (F_unicycle, H_marker_pose, H_range_bearing, controllability_rank,  # noqa: E402
+from estimation.models import (F_unicycle, G_unicycle, H_marker_pose, H_range_bearing, controllability_rank,  # noqa: E402
                                encoders_to_vw, f_unicycle, h_marker_pose, h_range_bearing,
                                observability_matrix, smallest_singular_value, tracking_error_model, wrap)
 
@@ -35,6 +35,16 @@ def test_jacobians():
         assert np.allclose(H_marker_pose(x, marker), num_jac(lambda z: h_marker_pose(z, marker), x, angle_rows=(2,)), atol=1e-5)
         assert np.allclose(H_range_bearing(x, marker), num_jac(lambda z: h_range_bearing(z, marker), x, angle_rows=(1,)), atol=1e-5)
     assert np.allclose(F_unicycle(x, (0.1, 0.0), DT), num_jac(lambda z: f_unicycle(z, (0.1, 0.0), DT), x, angle_rows=(2,)), atol=1e-5)
+
+
+def test_input_jacobian():
+    rng = np.random.default_rng(2)
+    for w in (0.4, -0.3, 0.05, 2e-4, 5e-5, 0.0):
+        x = np.array([rng.uniform(-2, 2), rng.uniform(-2, 2), rng.uniform(-np.pi, np.pi)])
+        v = rng.uniform(0.03, 0.2)
+        # step 1e-5: the exact f has a 1/w term, so a smaller step is dominated by round-off near w = 0
+        num = num_jac(lambda u: f_unicycle(x, u, DT), np.array([v, w]), eps=1e-5, angle_rows=(2,))
+        assert np.allclose(G_unicycle(x, (v, w), DT), num, atol=1e-6), (w, G_unicycle(x, (v, w), DT), num)
 
 
 def test_encoders():

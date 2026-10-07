@@ -1,0 +1,15 @@
+20 runs of 600 s; marker visible in 25% of samples (seed 0)
+  tuning A2t: inflation 1: ANEES 34.54
+  tuning A2t: inflation 2: ANEES 10.29
+  tuning A2t: inflation 3: ANEES 5.17
+  tuning A2t: inflation 4: ANEES 3.29
+  tuning A2t: inflation 6: ANEES 1.95
+  tuning A2t: inflation 8: ANEES 1.49
+chosen inflation for A2t: 4
+variant | position RMSE [mm] (second half) | heading RMSE [deg] | ANEES (ideal 3) | NEES inside 95% bound
+A0      |   3079.2 +/-   83.4            | 105.04 +/-  3.50  |  74958.86 +/- 6013.77 | 0.012
+A2      |    293.8 +/-   27.2            |   8.28 +/-  0.77  |     34.98 +/-    2.66 | 0.122
+A2t     |    292.9 +/-   25.7            |   8.21 +/-  0.73  |      3.34 +/-    0.34 | 0.982
+A1      |     75.5 +/-   23.7            |   2.16 +/-  0.72  |      3.36 +/-    0.88 | 0.938
+B       |     97.4 +/-   32.3            |   3.11 +/-  0.97  |      2.27 +/-    0.56 | 0.972
+B final scale estimates: s_v 0.858 +/- 0.012 (true 0.86), s_w 0.719 +/- 0.008 (true 0.720)

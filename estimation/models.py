@@ -48,6 +48,22 @@ def F_unicycle(x, u, dt):
                      [0.0, 0.0, 1.0]])
 
 
+def G_unicycle(x, u, dt):
+    """Jacobian of f_unicycle with respect to the input u = [v, w] (3x2)."""
+    v, w = u
+    th = x[2]
+    if abs(w) < 1e-4:   # series expansion, the exact expressions lose precision as w goes to 0
+        return np.array([[dt * np.cos(th), -v * dt**2 * np.sin(th) / 2],
+                         [dt * np.sin(th), v * dt**2 * np.cos(th) / 2],
+                         [0.0, dt]])
+    thn = th + w * dt
+    return np.array([[(np.sin(thn) - np.sin(th)) / w,
+                      -v / w**2 * (np.sin(thn) - np.sin(th)) + v / w * dt * np.cos(thn)],
+                     [(np.cos(th) - np.cos(thn)) / w,
+                      -v / w**2 * (np.cos(th) - np.cos(thn)) + v / w * dt * np.sin(thn)],
+                     [0.0, dt]])
+
+
 def h_marker_pose(x, marker):
     """Marker pose seen from the robot: its position in the robot frame and its orientation relative to the robot heading."""
     mx, my, psi = marker
