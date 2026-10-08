@@ -48,6 +48,10 @@ class MujocoTB3Driver:
         angles = np.array([self.data.joint("wheel_left").qpos[0], self.data.joint("wheel_right").qpos[0]])
         return np.round(angles * TICKS_PER_REV / (2 * np.pi)).astype(int)
 
+    def ticks(self):
+        """Current encoder tick counts [left, right]."""
+        return self._read_ticks()
+
     def step(self, omega_left_des, omega_right_des):
         """Advance one control period with the desired wheel speeds [rad/s]; return the encoder reading."""
         ticks = self._read_ticks()
