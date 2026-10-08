@@ -41,13 +41,13 @@ def load_run(path):
     return run
 
 
-def replay(run, estimate=False, gains=(1.0, 1.0), gate=None, noise=None, seed=0, meas_cov=None, gain_fn=None):
-    """Run one EKF variant over the log. Returns pose errors, NEES, gain history and the number of rejected updates."""
+def replay_states(run, estimate=False, gains=(1.0, 1.0), gate=None, noise=None, seed=0, meas_cov=None, gain_fn=None):
+    """Run one EKF variant over the log and keep every estimate: errors, NEES, gains, rejected count, poses, covariances."""
     rng = np.random.default_rng(10_000 + seed)
     x0 = run["pose0"] + rng.multivariate_normal(np.zeros(3), P0)
     ekf = MarkerEKF(x0, P0, run["marker_world"], run["wheel_radius"], run["track_nominal"], scales=gains,
                     estimate_scales=estimate, gate=gate, noise=noise, meas_cov=meas_cov, gain_fn=gain_fn)
-    errs, nees, hist, rejected = [], [], [], 0
+    errs, nees, hist, poses, covs, rejected = [], [], [], [], [], 0
     for k in range(len(run["truth"])):
         ekf.predict(run["wheel_omega"][k, 0], run["wheel_omega"][k, 1], run["dt"])
         if np.all(np.isfinite(run["marker"][k])):
@@ -57,7 +57,15 @@ def replay(run, estimate=False, gains=(1.0, 1.0), gate=None, noise=None, seed=0,
         errs.append(e)
         nees.append(float(e @ np.linalg.solve(ekf.pose_cov, e)))
         hist.append(np.array(ekf.scales))
-    return np.array(errs), np.array(nees), np.array(hist), rejected
+        poses.append(ekf.pose.copy())
+        covs.append(ekf.pose_cov.copy())
+    return np.array(errs), np.array(nees), np.array(hist), rejected, np.array(poses), np.array(covs)
+
+
+def replay(run, **kwargs):
+    """Run one EKF variant over the log. Returns pose errors, NEES, gain history and the number of rejected updates."""
+    errs, nees, hist, rejected, _, _ = replay_states(run, **kwargs)
+    return errs, nees, hist, rejected
 
 
 def metrics(errs, nees):
