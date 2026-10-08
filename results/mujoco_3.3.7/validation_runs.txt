@@ -1,0 +1,90 @@
+﻿MuJoCo 3.3.7
+single-point gains 0.869, 0.725; gain table measured
+
+=== path 'diagonal': loaded C:\Users\g1669\Documents\validation_runs\validation_diagonal.npz
+marker pose available in 35% of samples; obliquity when seen: median 24.4 deg, 98% above 15 deg, 0% above 30 deg; smallest clearance 0.26 m
+marker error mean / RMS by distance: band | n | x mm | y mm | heading deg
+   0.7-1.1 |  16 |   0.6/  1.2 |   0.5/  0.7 | -0.68/ 1.30
+   1.1-1.5 | 175 |   3.9/  4.4 |  -0.4/  0.7 |  0.19/ 0.79
+   1.5-2.0 | 213 |  10.2/ 10.4 |  -1.1/  1.2 |  0.13/ 0.49
+   2.0-3.5 | 434 |  32.6/ 42.5 |  -1.7/  6.9 |  5.61/14.05
+variant                          | first 30 s [mm] | pos RMSE 2nd half [mm] | max [mm] | heading RMSE [deg] | ANEES | inside 95%
+A single-point                   |             158 |                  258.8 |      539 |               8.42 |  41.9 | 0.07
+A gain table                     |             156 |                  131.4 |      476 |               4.23 |  18.6 | 0.38
+A table + hybrid R               |             156 |                  130.1 |      476 |               4.18 |  18.8 | 0.38
+B isotropic                      |             156 |                   89.1 |     1365 |              14.69 |  18.6 | 0.32
+B anisotropic, std-fitted        |             276 |                  129.1 |      772 |               6.60 |  85.1 | 0.18
+B anisotropic, RMS-fitted        |             247 |                  134.0 |      772 |               6.49 |  52.2 | 0.21
+B anisotropic RMS, lateral x5    |             200 |                  122.7 |     1440 |              15.62 |  47.1 | 0.10
+B hybrid                         |             155 |                   92.1 |     1262 |              13.61 |  17.7 | 0.41
+B hybrid, Q x2                   |             156 |                   81.4 |     1237 |              17.43 |   8.9 | 0.53
+C table + online correction      |             151 |                   61.2 |     1095 |              12.10 |  11.9 | 0.42
+C, Q x2                          |             151 |                   92.4 |      475 |               5.41 |   7.2 | 0.68
+
+=== path 'reverse': loaded C:\Users\g1669\Documents\validation_runs\validation_reverse.npz
+marker pose available in 35% of samples; obliquity when seen: median 0.1 deg, 4% above 15 deg, 3% above 30 deg; smallest clearance 0.28 m
+marker error mean / RMS by distance: band | n | x mm | y mm | heading deg
+   0.7-1.1 | 105 |   0.5/  1.6 |   1.0/  1.1 |  0.03/ 0.67
+   1.1-1.5 | 132 |   5.2/  5.6 |   1.3/  1.9 | -0.00/ 0.51
+   1.5-2.0 | 133 |  10.8/ 10.9 |   2.5/  2.5 |  0.09/ 0.82
+   2.0-3.5 | 472 |  28.3/ 36.3 |  -1.3/ 11.4 | -0.97/11.06
+variant                          | first 30 s [mm] | pos RMSE 2nd half [mm] | max [mm] | heading RMSE [deg] | ANEES | inside 95%
+A single-point                   |             146 |                  106.8 |      274 |               2.85 |  36.7 | 0.28
+A gain table                     |             134 |                   66.0 |      274 |               1.96 |  19.5 | 0.37
+A table + hybrid R               |             134 |                   66.7 |      274 |               2.03 |  20.6 | 0.38
+B isotropic                      |             123 |                   72.5 |      275 |               2.23 |  19.3 | 0.59
+B anisotropic, std-fitted        |             308 |                  114.6 |      762 |               3.20 |  49.2 | 0.28
+B anisotropic, RMS-fitted        |             217 |                  129.0 |      641 |               2.76 |  33.6 | 0.34
+B anisotropic RMS, lateral x5    |             119 |                  132.7 |      334 |               2.45 |  30.0 | 0.38
+B hybrid                         |             123 |                   63.6 |      275 |               1.84 |  21.5 | 0.58
+B hybrid, Q x2                   |             124 |                   76.4 |      275 |               3.19 |  10.6 | 0.75
+C table + online correction      |             126 |                  102.2 |      274 |               2.57 |  12.0 | 0.64
+C, Q x2                          |             126 |                  113.1 |      282 |               2.44 |   7.3 | 0.77
+
+=== path 'zigzag': collected 2400 samples in 63 s
+marker pose available in 50% of samples; obliquity when seen: median 9.6 deg, 7% above 15 deg, 4% above 30 deg; smallest clearance 0.25 m
+marker error mean / RMS by distance: band | n | x mm | y mm | heading deg
+   0.7-1.1 | 137 |   0.7/  1.6 |   0.3/  1.3 |  0.03/ 0.50
+   1.1-1.5 | 191 |   5.0/  5.5 |  -0.4/  2.1 |  0.01/ 0.38
+   1.5-2.0 | 238 |  10.4/ 10.6 |  -0.4/  2.5 |  0.14/ 0.56
+   2.0-3.5 | 617 |  33.7/ 45.2 |  -1.3/  6.8 | -2.49/13.65
+variant                          | first 30 s [mm] | pos RMSE 2nd half [mm] | max [mm] | heading RMSE [deg] | ANEES | inside 95%
+A single-point                   |              74 |                  133.1 |      326 |               3.47 |  36.9 | 0.08
+A gain table                     |              72 |                   41.6 |      299 |               1.36 |  17.7 | 0.42
+A table + hybrid R               |              72 |                   40.2 |      299 |               1.30 |  17.9 | 0.41
+B isotropic                      |              96 |                  113.9 |      300 |               1.61 |  20.1 | 0.43
+B anisotropic, std-fitted        |              92 |                  126.3 |      766 |               2.19 |  32.8 | 0.31
+B anisotropic, RMS-fitted        |             133 |                  132.1 |      607 |               2.28 |  29.0 | 0.26
+B anisotropic RMS, lateral x5    |             209 |                  132.9 |      521 |               2.68 |  31.6 | 0.24
+B hybrid                         |              95 |                  111.5 |      300 |               1.59 |  20.4 | 0.42
+B hybrid, Q x2                   |              95 |                  117.4 |      300 |               1.93 |  10.9 | 0.53
+C table + online correction      |              92 |                   57.1 |      299 |               1.66 |  11.3 | 0.61
+C, Q x2                          |              93 |                   74.8 |      299 |               1.74 |   7.5 | 0.73
+
+=== mean over development paths (diagonal, reverse): the variants were designed with these in view
+variant                          | first 30 s [mm] | pos RMSE 2nd half [mm] | max [mm] | heading RMSE [deg] | ANEES | inside 95%
+A single-point                   |             152 |                  182.8 |      406 |               5.63 |  39.3 | 0.18
+A gain table                     |             145 |                   98.7 |      375 |               3.10 |  19.1 | 0.37
+A table + hybrid R               |             145 |                   98.4 |      375 |               3.11 |  19.7 | 0.38
+B isotropic                      |             139 |                   80.8 |      820 |               8.46 |  19.0 | 0.45
+B anisotropic, std-fitted        |             292 |                  121.8 |      767 |               4.90 |  67.1 | 0.23
+B anisotropic, RMS-fitted        |             232 |                  131.5 |      706 |               4.63 |  42.9 | 0.28
+B anisotropic RMS, lateral x5    |             160 |                  127.7 |      887 |               9.03 |  38.6 | 0.24
+B hybrid                         |             139 |                   77.9 |      768 |               7.73 |  19.6 | 0.49
+B hybrid, Q x2                   |             140 |                   78.9 |      756 |              10.31 |   9.7 | 0.64
+C table + online correction      |             138 |                   81.7 |      684 |               7.33 |  11.9 | 0.53
+C, Q x2                          |             138 |                  102.7 |      378 |               3.92 |   7.2 | 0.72
+
+=== mean over final test path (zigzag): added after the variants were fixed
+variant                          | first 30 s [mm] | pos RMSE 2nd half [mm] | max [mm] | heading RMSE [deg] | ANEES | inside 95%
+A single-point                   |              74 |                  133.1 |      326 |               3.47 |  36.9 | 0.08
+A gain table                     |              72 |                   41.6 |      299 |               1.36 |  17.7 | 0.42
+A table + hybrid R               |              72 |                   40.2 |      299 |               1.30 |  17.9 | 0.41
+B isotropic                      |              96 |                  113.9 |      300 |               1.61 |  20.1 | 0.43
+B anisotropic, std-fitted        |              92 |                  126.3 |      766 |               2.19 |  32.8 | 0.31
+B anisotropic, RMS-fitted        |             133 |                  132.1 |      607 |               2.28 |  29.0 | 0.26
+B anisotropic RMS, lateral x5    |             209 |                  132.9 |      521 |               2.68 |  31.6 | 0.24
+B hybrid                         |              95 |                  111.5 |      300 |               1.59 |  20.4 | 0.42
+B hybrid, Q x2                   |              95 |                  117.4 |      300 |               1.93 |  10.9 | 0.53
+C table + online correction      |              92 |                   57.1 |      299 |               1.66 |  11.3 | 0.61
+C, Q x2                          |              93 |                   74.8 |      299 |               1.74 |   7.5 | 0.73

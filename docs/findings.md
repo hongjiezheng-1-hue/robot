@@ -355,6 +355,49 @@ With refinement the second-half position error of the B filter improves from 80.
 
 Not yet done: the noise coefficients were read off the same runs they are evaluated on, so a held-out run with a different path and different speeds is needed before the hybrid model is adopted; the origin of the depth bias.
 
+## Stage 8: independent validation on new paths (MuJoCo 3.3.7, sub-pixel corner refinement on)
+
+Script: `experiments/validation_runs.py`; output: `results/mujoco_3.3.7/validation_runs.txt`; paths in `sim/mujoco_run.py` (`VALIDATION_PATHS`). Nothing was refitted: the noise coefficients (read off the default run), the hybrid switch distance (1.5 m), the gain table and the single-point gains (calibrated in their own short runs) are used as they are. Each path is 240 s, 2400 samples, one run.
+
+| Path | Marker in view | Viewing angle when seen | Smallest clearance |
+|---|---|---|---|
+| diagonal (development) | 35% | median 24 degrees, 98% above 15 degrees | 0.26 m |
+| reverse (development) | 35% | median 0.1 degrees (head-on) | 0.28 m |
+| zigzag (final test) | 50% | median 9.6 degrees | 0.25 m |
+
+The marker pose error reproduces on all three paths: depth error about +10 mm at 1.5 to 2.0 m and +28 to +34 mm at 2.0 to 3.5 m, lateral error 1 to 3 mm, heading error 0.4 to 0.8 degrees up to 2 m and 11 to 14 degrees RMS at 2 to 3.5 m.
+
+The paths diagonal and reverse were used to see how the variants behave and variant C (below) was designed after seeing them, so they are development data. The path zigzag was added after all variants were fixed and is the final test; its geometry was only adjusted for obstacle clearance before any filter was run on it.
+
+Second-half position RMSE [mm] (ANEES in brackets; ideal ANEES is 3):
+
+| Variant | diagonal | reverse | zigzag (final test) | Mean of the three |
+|---|---|---|---|---|
+| A single-point calibration | 258.8 (41.9) | 106.8 (36.7) | 133.1 (36.9) | 166.3 |
+| A gain table (measured on arcs) | 131.4 (18.6) | 66.0 (19.5) | **41.6** (17.7) | 79.7 |
+| A gain table + hybrid noise | 130.1 (18.8) | 66.7 (20.6) | 40.2 (17.9) | 79.0 |
+| B gains estimated online, isotropic noise | 89.1 (18.6) | 72.5 (19.3) | 113.9 (20.1) | 91.8 |
+| B + hybrid noise | 92.1 (17.7) | 63.6 (21.5) | 111.5 (20.4) | 89.1 |
+| B + anisotropic noise, fitted to std | 129.1 (85.1) | 114.6 (49.2) | 126.3 (32.8) | 123.3 |
+| B + anisotropic noise, fitted to RMS | 134.0 (52.2) | 129.0 (33.6) | 132.1 (29.0) | 131.7 |
+| B + anisotropic RMS, lateral sigma x5 | 122.7 (47.1) | 132.7 (30.0) | 132.9 (31.6) | 129.4 |
+| C gain table with online correction | 61.2 (11.9) | 102.2 (12.0) | 57.1 (11.3) | 73.5 |
+| C with odometry noise x2 | 92.4 (7.2) | 113.1 (7.3) | 74.8 (7.5) | 93.4 |
+
+Maximum position error on the final test path: A gain table 299 mm, B 300 mm, C 299 mm, anisotropic variants 521 to 766 mm.
+
+Findings:
+
+1. The gain table measured on arcs is the strongest fixed-gain baseline and the result holds on all three paths (41.6 against 133.1 mm for the single-point calibration on the final test path).
+2. Estimating constant gains online (B) is **not** better than that table: 113.9 against 41.6 mm on the final test path. B looked better on the development paths (80.8 against 98.7 mm), and on the diagonal path it produced a 1.4 m excursion. The conclusion of stage 6 that B is better than a fixed-gain filter held only against the single-point calibration.
+3. Cause of the excursion (diagonal path): the marker was last seen during a slow oblique approach, where B estimated `s_w = 0.66`; the filter then dead-reckoned for 60 s without the marker (position error 0.4 to 1.4 m, heading error up to 41 degrees). The true gains depend on speed and yaw rate, which a constant gain cannot represent, and B's estimate depends on the regime in which the marker happened to be in view. At 3.1 m the marker heading also shows outliers of +25 to +37 degrees between measurements within a few degrees, the planar pose ambiguity.
+4. The anisotropic marker noise models are worse than the isotropic one on all three paths (123 to 132 against 92 mm on average, ANEES 29 to 85). They should not be used.
+5. The hybrid noise model has no reliable effect (on top of the gain table: 40.2 against 41.6, 130.1 against 131.4, 66.7 against 66.0 mm). The earlier statement that it is about 10% better is withdrawn; it was a single-run coincidence.
+6. Variant C is better than B on the final test path (57.1 against 113.9 mm) but not better than the table alone (41.6 mm), and wins on one path and loses on two. Its benefit is consistency (ANEES 11.3 against 17.7, 61% inside the bound against 42%), not reliable accuracy.
+7. Every variant remains overconfident; the best ANEES is 7.2 to 7.5 (C with doubled odometry noise), against an ideal 3.
+
+Limits: the gain table was calibrated in the same simulator under ideal conditions, which a real robot will not allow; with a noisier or coarser calibration the online estimation (B or C) may matter more, so these results cannot simply be transferred to hardware. Only MuJoCo 3.3.7 and three paths were used, and the simulator is deterministic, so "independent" means independent paths. The gain table needs 16 short runs in an obstacle-free room.
+
 ## Open items
 
 - Confirm the robot (Burger or Waffle Pi) held by the hardware lab.

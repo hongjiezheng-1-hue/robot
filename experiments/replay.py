@@ -41,12 +41,14 @@ def load_run(path):
     return run
 
 
-def replay_states(run, estimate=False, gains=(1.0, 1.0), gate=None, noise=None, seed=0, meas_cov=None, gain_fn=None):
+def replay_states(run, estimate=False, gains=(1.0, 1.0), gate=None, noise=None, seed=0, meas_cov=None, gain_fn=None,
+                  scale_sigma0=0.2):
     """Run one EKF variant over the log and keep every estimate: errors, NEES, gains, rejected count, poses, covariances."""
     rng = np.random.default_rng(10_000 + seed)
     x0 = run["pose0"] + rng.multivariate_normal(np.zeros(3), P0)
     ekf = MarkerEKF(x0, P0, run["marker_world"], run["wheel_radius"], run["track_nominal"], scales=gains,
-                    estimate_scales=estimate, gate=gate, noise=noise, meas_cov=meas_cov, gain_fn=gain_fn)
+                    estimate_scales=estimate, gate=gate, noise=noise, meas_cov=meas_cov, gain_fn=gain_fn,
+                    scale_sigma0=scale_sigma0)
     errs, nees, hist, poses, covs, rejected = [], [], [], [], [], 0
     for k in range(len(run["truth"])):
         ekf.predict(run["wheel_omega"][k, 0], run["wheel_omega"][k, 1], run["dt"])

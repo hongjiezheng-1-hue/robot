@@ -31,6 +31,21 @@ def test_followed_path_keeps_clear_of_obstacles():
         assert clearance > ROBOT_REACH, f"followed path comes within {clearance:.2f} m of an obstacle (gains {s_v}, {s_w})"
 
 
+def test_validation_paths_keep_clear_and_see_the_marker():
+    from sim.mujoco_run import VALIDATION_PATHS
+    scene = SceneConfig()
+    marker = np.array([scene.station_x, scene.station_y, scene.station_yaw])
+    for name, spec in VALIDATION_PATHS.items():
+        cfg = RunConfig(duration=300.0, **spec)
+        assert len(cfg.waypoints) == len(cfg.speeds), name
+        for s_v, s_w in ((0.86, 0.72), (1.0, 1.0)):
+            path = simulate_follower_path(cfg, s_v, s_w)
+            clearance = min_clearance(path, scene)
+            assert clearance > ROBOT_REACH, f"{name}: path comes within {clearance:.2f} m of an obstacle (gains {s_v}, {s_w})"
+        visible = np.mean([marker_possibly_visible(p, marker) for p in simulate_follower_path(cfg, 0.86, 0.72)])
+        assert visible > 0.12, f"{name}: the marker could be in view for only {100 * visible:.0f}% of the path"
+
+
 def test_marker_faces_the_lane():
     cfg = RunConfig()
     path = simulate_follower_path(cfg, duration=600.0)

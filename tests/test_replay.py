@@ -72,6 +72,17 @@ def test_gain_table_and_noise_variants_run():
     assert metrics(errs, nees)["pos_rmse_half"] < 0.4
 
 
+def test_table_with_online_correction():
+    """A gain table that is 5 percent off is corrected online; without the table the correction is the gain itself."""
+    off = (CFG.s_v_true * 1.05, CFG.s_w_true * 0.95)
+    table = lambda v, w: off
+    errs0, nees0, _, _ = replay(RUN, gain_fn=table)
+    errs1, nees1, hist, _ = replay(RUN, estimate=True, gain_fn=table, scale_sigma0=0.1)
+    assert abs(hist[-1, 0] * off[0] - CFG.s_v_true) / CFG.s_v_true < 0.03, hist[-1]
+    assert abs(hist[-1, 1] * off[1] - CFG.s_w_true) / CFG.s_w_true < 0.03, hist[-1]
+    assert metrics(errs1, nees1)["pos_rmse_half"] < metrics(errs0, nees0)["pos_rmse_half"]
+
+
 def test_load_run_roundtrip(tmp_path=None):
     import tempfile
     from replay import load_run

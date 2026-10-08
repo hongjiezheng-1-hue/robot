@@ -26,6 +26,32 @@ class RunConfig:
     subpixel: bool = False       # ArUco corner refinement in the marker detector
 
 
+# Paths used for validation only: different geometry and speeds from the default run, so noise coefficients and gains
+# that were read off or calibrated on the default run are tested on motion they have not seen.
+VALIDATION_PATHS = {
+    # oblique approaches to the marker (diagonal lanes), two laps at different speeds
+    "diagonal": dict(
+        start=(-1.2, -1.0, 0.4),
+        waypoints=((1.2, 0.2), (1.2, 0.8), (-1.2, 1.2), (-1.4, 0.0), (-1.2, -1.0),
+                   (1.2, 0.2), (1.2, 0.8), (-1.2, 1.2), (-1.4, 0.0), (-1.2, -1.0)),
+        speeds=(0.10, 0.07, 0.12, 0.14, 0.05, 0.06, 0.09, 0.15, 0.08, 0.12),
+    ),
+    # head-on lane at another lateral offset, then the room is circled in the opposite direction, lane speed changes per lap
+    "reverse": dict(
+        start=(-1.5, -0.12, 0.0),
+        waypoints=((1.25, -0.12), (1.25, -1.15), (-1.4, -1.15), (-1.4, 1.1), (1.2, 1.1), (-1.5, 0.9), (-1.5, -0.12),
+                   (1.25, -0.12), (1.25, -1.15), (-1.4, -1.15), (-1.4, 1.1), (1.2, 1.1), (-1.5, 0.9), (-1.5, -0.12)),
+        speeds=(0.06, 0.12, 0.15, 0.08, 0.10, 0.07, 0.05, 0.14, 0.09, 0.12, 0.06, 0.11, 0.08, 0.05),
+    ),
+    # final test path, added after the filter variants had been developed on the two paths above; not to be changed
+    "zigzag": dict(
+        start=(-1.4, 1.15, -0.3),
+        waypoints=((1.3, 0.6), (1.3, -1.15), (-1.3, -1.15), (-1.45, -0.12), (1.25, -0.12), (1.25, 0.8), (-1.4, 1.15)),
+        speeds=(0.09, 0.13, 0.15, 0.07, 0.05, 0.10, 0.12),
+    ),
+}
+
+
 def follower_step(pose, wp, cfg):
     """Waypoint follower: returns the (possibly advanced) waypoint index and the nominal v, w command."""
     x, y, yaw = pose

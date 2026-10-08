@@ -73,8 +73,9 @@ All numbers are in [docs/findings.md](docs/findings.md) with the conditions and 
 
 - The simulated robot's odometry depends on speed and yaw rate (linear ratio about 0.93 at low speed and 0.87 above, yaw ratio 0.73 to 0.84), and this depends on the MuJoCo version (3.3.7 against 3.15.0), so calibrated values are not portable.
 - On the MuJoCo run the position error is a few millimetres to centimetres while the marker is in view and grows to about half a metre within a minute of odometry alone.
-- Estimating the gains online (B) is close to a fixed-gain filter whose gains were measured on arcs, and clearly better than a single-point calibration. With noise-free calibration a fixed-gain filter is better; the advantage of B depends on how good the calibration is.
-- Every variant tested is overconfident on MuJoCo data (ANEES 17 or more against an ideal 3). The marker pose error has a systematic part and is correlated between frames, which the filter does not model.
+- On three independent paths a fixed-gain filter whose gains were measured on arcs (a table over speed and yaw rate) was the most accurate and most robust (final test path: 42 mm position RMSE), clearly better than a single-point calibration (133 mm). Estimating constant gains online (B) was not better than the table (114 mm on the final test path) and once produced a 1.4 m excursion; a table with an online correction (C) improves consistency but not reliably accuracy. These results are from a simulator in which the table can be calibrated ideally, so they do not transfer directly to hardware.
+- An anisotropic marker noise model was worse than the isotropic one on all three paths and should not be used.
+- Every variant tested is overconfident on MuJoCo data (best ANEES 7 against an ideal 3). The marker pose error has a systematic part and is correlated between frames, which the filter does not model.
 
 ## Demo video
 

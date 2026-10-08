@@ -95,7 +95,13 @@ class MarkerEKF:
 
     def predict(self, w_left, w_right, dt):
         v_nom, w_nom = encoders_to_vw(w_left, w_right, self.r, self.b)
-        s_v, s_w = self.gain_fn(v_nom, w_nom) if (self.gain_fn is not None and not self.estimate_scales) else self.scales
+        base_v, base_w = self.gain_fn(v_nom, w_nom) if self.gain_fn is not None else (1.0, 1.0)
+        if self.estimate_scales:        # the state holds multiplicative corrections on the table gains (or on 1 without a table)
+            s_v, s_w = base_v * self.x[3], base_w * self.x[4]
+        elif self.gain_fn is not None:
+            s_v, s_w = base_v, base_w
+        else:
+            s_v, s_w = self.fixed_scales
         u = (s_v * v_nom, s_w * w_nom)
         pose = self.x[:3]
         F3 = F_unicycle(pose, u, dt)
@@ -106,8 +112,8 @@ class MarkerEKF:
         if self.estimate_scales:
             F = np.eye(5)
             F[:3, :3] = F3
-            F[:3, 3] = G[:, 0] * v_nom
-            F[:3, 4] = G[:, 1] * w_nom
+            F[:3, 3] = G[:, 0] * v_nom * base_v
+            F[:3, 4] = G[:, 1] * w_nom * base_w
             Q = np.zeros((5, 5))
             Q[:3, :3] = Q3
             Q[3:, 3:] = np.eye(2) * self.scale_step_sigma**2
