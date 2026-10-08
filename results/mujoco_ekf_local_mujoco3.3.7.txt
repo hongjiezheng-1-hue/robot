@@ -1,0 +1,36 @@
+﻿MuJoCo 3.3.7
+marker texture type used: cube
+single-point calibration: s_v = 0.869, s_w = 0.725
+gain table s_v (rows: speed [0.03, 0.06, 0.1, 0.15] columns: yaw rate [0.0, 0.15, 0.3, 0.5] )
+[[0.968 0.857 0.793 0.535]
+ [0.902 0.895 0.865 0.765]
+ [0.869 0.867 0.88  0.855]
+ [0.867 0.857 0.856 0.866]]
+gain table s_w
+[[0.839 0.839 0.809 0.709]
+ [0.877 0.877 0.879 0.802]
+ [0.854 0.854 0.859 0.825]
+ [0.646 0.646 0.765 0.831]]
+loaded C:\Users\g1669\Documents\run_local_mujoco.npz
+marker pose available in 48% of samples; smallest clearance 0.24 m
+true / nominal odometry, linear speed: [('0.02-0.07', 1100, 0.931), ('0.07-0.12', 466, 0.869), ('0.12-0.25', 396, 0.865)]
+true / nominal odometry, yaw rate:    [('0.10-0.25', 67, 0.842), ('0.25-0.60', 327, 0.727)]
+marker residuals: distance band | n | x std mm | y std mm | heading std deg
+   0.2-0.7 | 24 | 1.0 | 0.4 | 1.25
+   0.7-1.1 | 118 | 3.1 | 0.4 | 2.90
+   1.1-1.5 | 115 | 5.7 | 0.7 | 5.27
+   1.5-2.0 | 215 | 11.6 | 0.9 | 7.20
+   2.0-3.5 | 686 | 33.9 | 4.2 | 8.22
+B + aniso R, Q x2 final gains: s_v = 0.946, s_w = 0.756
+variant              | pos RMSE [mm] | pos RMSE 2nd half | max [mm] | heading RMSE [deg] | ANEES (ideal 3) | inside 95% | rejected
+A0 nominal gains     |        1198.8 |            1348.4 |     2916 |              40.20 |         2168.68 |      0.177 | 0
+A single-point       |         184.8 |             182.9 |      413 |               5.58 |           67.63 |      0.020 | 0
+A single-point + gate |         184.8 |             182.9 |      413 |               5.58 |           67.63 |      0.020 | 0
+A gain table         |         102.3 |              95.7 |      250 |               3.02 |           28.28 |      0.259 | 0
+A table + aniso R    |         158.3 |              93.0 |      746 |               3.85 |           71.74 |      0.165 | 0
+A table + aniso R, Q x2 |         146.7 |             111.4 |      712 |               3.59 |           35.73 |      0.393 | 0
+A table + aniso R, Q x4 |         133.6 |             125.5 |      627 |               3.35 |           18.40 |      0.496 | 0
+B                    |         106.8 |              80.0 |      260 |               2.06 |           31.84 |      0.361 | 0
+B + aniso R          |         163.5 |              92.3 |      746 |               3.17 |           57.34 |      0.125 | 0
+B + aniso R, Q x2    |         149.0 |             107.3 |      713 |               2.72 |           31.63 |      0.265 | 0
+B + aniso R, Q x4    |         143.8 |             117.2 |      629 |               3.97 |           17.68 |      0.479 | 0

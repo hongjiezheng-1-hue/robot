@@ -27,6 +27,19 @@ def test_marker_plate_size():
     assert abs(size[1] - 0.09) < 1e-9 and abs(size[2] - 0.09) < 1e-9   # plate = marker plus quiet zone, half-size 0.09
 
 
+def test_marker_texture_types():
+    for texture_type, expected in (("2d", "2d"), ("cube", "cube")):
+        root = ET.fromstring(build_scene_xml(SceneConfig(marker_texture_type=texture_type)))
+        tex = [t for t in root.iter("texture") if t.get("name") == "marker_tex"][0]
+        assert tex.get("type") == expected
+        assert (tex.get("gridsize") == "1 1") == (expected == "cube")
+    try:
+        build_scene_xml(SceneConfig(marker_texture_type="bogus"))
+        raise AssertionError("expected a ValueError for an unknown texture type")
+    except ValueError:
+        pass
+
+
 def test_camera_injection():
     robot = ('<mujoco><worldbody><body name="base" pos="0 0 0">\n      <joint type="free" name="base_joint"/>\n'
              '      <geom type="sphere" size="0.1"/></body></worldbody></mujoco>')

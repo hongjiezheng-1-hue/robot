@@ -31,6 +31,7 @@ class SceneConfig:
     marker_border_px: int = 100         # white quiet zone around the marker in the texture
     robot_xml: str = "turtlebot3_waffle_pi.xml"
     marker_texture: str = "aruco_marker.png"
+    marker_texture_type: str = "2d"     # "2d" works on recent MuJoCo; older builds (for example 3.3.7) only texture a box with "cube"
     camera_name: str = "front"
     camera_pos: tuple = (0.083, 0.0, 0.107)   # [m] in the robot base frame (placeholder: position of the camera block in the upstream XML)
     camera_fovy: float = 48.8           # [deg] vertical field of view (placeholder: Raspberry Pi camera v2)
@@ -70,6 +71,12 @@ def build_scene_xml(cfg):
         for i, (x, y, sx, sy) in enumerate(cfg.obstacles))
     plate_half = cfg.marker_size * (cfg.marker_side_px + 2 * cfg.marker_border_px) / cfg.marker_side_px / 2
     qw, qz = math.cos(cfg.station_yaw / 2), math.sin(cfg.station_yaw / 2)
+    if cfg.marker_texture_type == "cube":
+        marker_texture_xml = f'<texture type="cube" name="marker_tex" file="{cfg.marker_texture}" gridsize="1 1"/>'
+    elif cfg.marker_texture_type == "2d":
+        marker_texture_xml = f'<texture type="2d" name="marker_tex" file="{cfg.marker_texture}"/>'
+    else:
+        raise ValueError(f"unknown marker_texture_type {cfg.marker_texture_type!r}")
     return f"""<mujoco model="track_a_scene">
   <include file="{cfg.robot_xml}"/>
 
@@ -85,7 +92,7 @@ def build_scene_xml(cfg):
     <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
       markrgb="0.8 0.8 0.8" width="300" height="300"/>
     <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
-    <texture type="2d" name="marker_tex" file="{cfg.marker_texture}"/>
+    {marker_texture_xml}
     <material name="marker" texture="marker_tex" specular="0" shininess="0"/>
   </asset>
 

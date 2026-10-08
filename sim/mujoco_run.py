@@ -72,6 +72,34 @@ def marker_possibly_visible(pose, marker_world, max_range=4.0, half_fov=np.radia
     return z[0] > 0 and np.hypot(z[0], z[1]) < max_range and abs(np.arctan2(z[1], z[0])) < half_fov
 
 
+def pick_texture_type(scene_cfg, robot_dir, flip_marker=False):
+    """Return the scene config with a marker texture type that this MuJoCo build renders and OpenCV detects.
+
+    Recent MuJoCo textures a box with a 2D texture; older builds (for example 3.3.7) need a cube texture.
+    """
+    import dataclasses
+
+    import mujoco
+
+    from perception.aruco import detect_markers
+    from sim.scene import write_scene
+
+    for texture_type in ("2d", "cube"):
+        cfg = dataclasses.replace(scene_cfg, marker_texture_type=texture_type)
+        model = mujoco.MjModel.from_xml_path(write_scene(cfg, robot_dir, flip_marker=flip_marker))
+        data = mujoco.MjData(model)
+        data.qpos[0] = cfg.station_x - 0.8
+        data.qpos[1] = cfg.station_y
+        mujoco.mj_forward(model, data)
+        renderer = mujoco.Renderer(model, height=cfg.camera_height, width=cfg.camera_width)
+        renderer.update_scene(data, camera=cfg.camera_name)
+        ids, _ = detect_markers(renderer.render(), cfg.marker_dictionary)
+        renderer.close()
+        if ids is not None and cfg.marker_id in ids.flatten():
+            return cfg
+    raise RuntimeError("the marker is not detected with either texture type; check rendering and lighting")
+
+
 def collect_run(drv, scene_cfg, cfg):
     import mujoco
 
