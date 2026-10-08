@@ -315,6 +315,46 @@ Findings (single run per variant, MuJoCo 3.3.7 only, so differences between neig
 5. No update was rejected by the gate in this run, since the filters stay close enough to the truth; the earlier Colab run showed the opposite.
 6. All variants remain overconfident (ANEES at least 17).
 
+## Stage 7: why the anisotropic marker noise model was worse, and sub-pixel corner refinement (MuJoCo 3.3.7)
+
+Scripts: `experiments/noise_model_study.py`, `experiments/mujoco_ekf.py --subpixel`; outputs in `results/`. Two local runs of 2400 samples: corner refinement off (the stage 6 run) and on. Single runs, so small differences are not established.
+
+Diagnosis on the run without refinement:
+
+1. The marker pose error has a systematic part, not only scatter. Depth (x) mean / std [mm] by distance 0.2 to 0.7, 0.7 to 1.1, 1.1 to 1.5, 1.5 to 2.0, 2.0 to 3.5 m: 1.5 / 1.0, 4.6 / 3.1, 9.1 / 5.7, 12.1 / 11.6, 32.3 / 33.9. Lateral (y): 1.0 / 0.4, 1.4 / 0.4, 2.0 / 0.7, 2.4 / 0.9, 4.4 / 4.2. The anisotropic model of stage 5 was fitted to the standard deviation only, so it under-stated the real error, which the filter does not model as a bias.
+2. The errors are correlated: corr(y, heading) about -0.3 to -0.5 and corr(x, y) about +0.4 to +0.6 below 2 m; the model treats them as independent.
+3. Lateral error grows with obliquity (mean 3.4 mm head-on, 11.8 and 17.7 mm at 5 to 15 and 15 to 30 degrees, few samples), while 859 of the 901 samples beyond 1.5 m were head-on, which is what the model was fitted to.
+4. The largest filter error (746 mm) occurs at t = 0.2 s, during the initial convergence, and the first 30 s account for the difference: mean position error 270 mm with the anisotropic model against 56 mm with the isotropic one. Over all marker updates the isotropic model is over-conservative (mean normalised innovation 0.7, ideal 3) and the anisotropic one is closer (2.1), yet its estimates are worse.
+
+Noise model variants with the B filter (first 30 s mean position error / second-half position RMSE [mm]; ANEES in brackets):
+
+| Model | No corner refinement | Sub-pixel refinement |
+|---|---|---|
+| Isotropic (original) | 56 / 80.0 (31.8) | 75 / 66.7 (33.7) |
+| Anisotropic, fitted to std | 270 / 92.3 (57.3) | 282 / 57.4 (50.1) |
+| Anisotropic, fitted to RMS (bias included) | 143 / 97.3 (42.2) | 162 / 58.1 (37.9) |
+| Anisotropic RMS, lateral sigma x5 | 53 / 99.1 (40.7) | 46 / 62.1 (35.6) |
+| Hybrid (anisotropic RMS below 1.5 m, isotropic beyond) | 56 / 73.2 (33.1) | 75 / 60.1 (34.4) |
+| Isotropic, every 5th update only | 101 / 70.6 (19.5) | 139 / 77.7 (20.0) |
+| Anisotropic RMS, every 5th update only | 229 / 73.4 (24.7) | 262 / 68.8 (25.0) |
+
+Findings consistent over both runs: the poor start of the anisotropic model comes from a lateral sigma that is too small at long range (a larger lateral sigma restores the start); the hybrid model keeps the isotropic start and is about 10% better than the isotropic model in the second half (73.2 against 80.0 and 60.1 against 66.7). Not reproduced: using only every 5th update helps consistency (ANEES) but not accuracy; the earlier idea that correlated frame-to-frame errors explain the problem is therefore not supported as an explanation of accuracy.
+
+Sub-pixel corner refinement (OpenCV `CORNER_REFINE_SUBPIX`), marker error mean / RMS [mm], heading RMS [deg], by distance:
+
+| Distance [m] | Depth x, off | Depth x, on | Heading, off | Heading, on |
+|---|---|---|---|---|
+| 0.7 to 1.1 | 4.6 / 5.5 | 0.3 / 1.5 | 2.9 | 0.66 |
+| 1.1 to 1.5 | 9.1 / 10.7 | 5.5 / 5.9 | 5.3 | 0.64 |
+| 1.5 to 2.0 | 12.1 / 16.8 | 10.7 / 10.8 | 7.2 | 1.05 |
+| 2.0 to 3.5 | 32.3 / 46.8 | 22.3 / 29.8 | 8.2 | 7.5 |
+
+Refinement reduces the scatter several times over (heading error 5 to 8 times at 1.1 to 2 m) but not the systematic depth bias (about 0.003 d squared) or the lateral bias of 1 to 4 mm. It is therefore not caused by corner localisation. A possible cause is the texture filtering of the simulated render shrinking the black square by about 0.2 px and a half-pixel principal-point convention; neither was tested, and a real camera may behave differently. At 2 to 3.5 m the marker is about 20 px wide and the heading error stays near 7.5 degrees.
+
+With refinement the second-half position error of the B filter improves from 80.0 to 66.7 mm (isotropic model) and the anisotropic variants become better than the isotropic one (57 against 67 mm); the maximum error stays at 640 to 720 mm for the anisotropic model because of the initial convergence problem above.
+
+Not yet done: the noise coefficients were read off the same runs they are evaluated on, so a held-out run with a different path and different speeds is needed before the hybrid model is adopted; the origin of the depth bias.
+
 ## Open items
 
 - Confirm the robot (Burger or Waffle Pi) held by the hardware lab.

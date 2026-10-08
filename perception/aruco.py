@@ -18,12 +18,15 @@ def make_marker_image(marker_id=0, dictionary="DICT_4X4_50", side_px=400, border
     return img[:, ::-1].copy() if flip else img
 
 
-def detect_markers(image, dictionary="DICT_4X4_50"):
-    """Return (ids, corners); ids is None when nothing is detected."""
+def detect_markers(image, dictionary="DICT_4X4_50", subpixel=False):
+    """Return (ids, corners); ids is None when nothing is detected. subpixel turns on corner refinement."""
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY) if image.ndim == 3 else image
     d = _dictionary(dictionary)
+    params = cv2.aruco.DetectorParameters()
+    if subpixel:
+        params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
     if hasattr(cv2.aruco, "ArucoDetector"):
-        corners, ids, _ = cv2.aruco.ArucoDetector(d, cv2.aruco.DetectorParameters()).detectMarkers(gray)
+        corners, ids, _ = cv2.aruco.ArucoDetector(d, params).detectMarkers(gray)
     else:
-        corners, ids, _ = cv2.aruco.detectMarkers(gray, d)
+        corners, ids, _ = cv2.aruco.detectMarkers(gray, d, parameters=params)
     return ids, corners

@@ -23,6 +23,7 @@ class RunConfig:
                         (1.3, -0.08), (1.3, 1.1), (-1.5, 1.1), (-1.5, -0.08))
     speeds: tuple = (0.05, 0.10, 0.15, 0.10, 0.15, 0.05, 0.10, 0.15)   # nominal speed on the segment that ends at each waypoint
     arrive_radius: float = 0.15
+    subpixel: bool = False       # ArUco corner refinement in the marker detector
 
 
 def follower_step(pose, wp, cfg):
@@ -136,7 +137,7 @@ def collect_run(drv, scene_cfg, cfg):
                 raise RuntimeError(f"robot appears stuck at t = {k * cfg.dt:.0f} s, pose {truth[k]}: possible collision")
         if marker_possibly_visible(truth[k], marker_world):
             renderer.update_scene(drv.data, camera=scene_cfg.camera_name)
-            ids, corners = detect_markers(renderer.render(), scene_cfg.marker_dictionary)
+            ids, corners = detect_markers(renderer.render(), scene_cfg.marker_dictionary, subpixel=cfg.subpixel)
             if ids is not None and scene_cfg.marker_id in ids.flatten():
                 c = corners[list(ids.flatten()).index(scene_cfg.marker_id)].reshape(4, 2)
                 z = estimate_marker_pose(c, K, scene_cfg.marker_size, scene_cfg.camera_pos)

@@ -96,6 +96,24 @@ def odometry_ratio_by_speed(run, v_bins=((0.02, 0.07), (0.07, 0.12), (0.12, 0.25
     return out
 
 
+def marker_bias_by_distance(run, bins=((0.2, 0.7), (0.7, 1.1), (1.1, 1.5), (1.5, 2.0), (2.0, 3.5))):
+    """Mean (systematic) and RMS (mean and spread together) of the marker pose error by distance."""
+    rows = []
+    for k in range(len(run["truth"])):
+        z = run["marker"][k]
+        if np.all(np.isfinite(z)):
+            e = z - h_marker_pose(run["truth"][k], run["marker_world"])
+            e[2] = wrap(e[2])
+            rows.append((np.hypot(z[0], z[1]), e))
+    out = []
+    for lo, hi in bins:
+        sel = np.array([e for d, e in rows if lo <= d < hi])
+        if len(sel):
+            out.append((lo, hi, len(sel), sel[:, 0].mean(), sel[:, 1].mean(), np.degrees(sel[:, 2].mean()),
+                        np.sqrt(np.mean(sel[:, 0] ** 2)), np.sqrt(np.mean(sel[:, 1] ** 2)), np.degrees(np.sqrt(np.mean(sel[:, 2] ** 2)))))
+    return out
+
+
 def marker_residual_by_distance(run, bins=((0.2, 0.7), (0.7, 1.1), (1.1, 1.5), (1.5, 2.0), (2.0, 3.5))):
     """Measured minus true marker pose, grouped by distance; compares the real noise with the filter's model."""
     from estimation.ekf import marker_measurement_cov

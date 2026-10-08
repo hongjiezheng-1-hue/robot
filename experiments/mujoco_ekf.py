@@ -19,8 +19,8 @@ sys.path.insert(0, str(ROOT / "experiments"))
 import mujoco  # noqa: E402
 from drivers.mujoco_tb3 import MujocoTB3Driver  # noqa: E402
 from estimation.ekf import marker_measurement_cov_measured  # noqa: E402
-from replay import (CHI2_3_999, inflated, load_run, marker_residual_by_distance, metrics,  # noqa: E402
-                    odometry_ratio_by_speed, print_table, replay)
+from replay import (CHI2_3_999, inflated, load_run, marker_bias_by_distance, marker_residual_by_distance,  # noqa: E402
+                    metrics, odometry_ratio_by_speed, print_table, replay)
 from sim.mujoco_run import (RunConfig, calibrate_gain_table, calibrate_gains, collect_run,  # noqa: E402
                             min_clearance, pick_texture_type)
 from sim.scene import SceneConfig, write_scene  # noqa: E402
@@ -31,12 +31,14 @@ def main():
     ap.add_argument("--model-dir", required=True, help="folder robotis_tb3 of the ROBOTIS MuJoCo model")
     ap.add_argument("--duration", type=float, default=240.0)
     ap.add_argument("--run-file", default=None, help="save the collected run here, or load it if it exists")
+    ap.add_argument("--subpixel", action="store_true", help="enable ArUco corner refinement in the detector")
     args = ap.parse_args()
 
     print("MuJoCo", mujoco.__version__)
     scene_cfg = pick_texture_type(SceneConfig(), args.model_dir)
     print("marker texture type used:", scene_cfg.marker_texture_type)
-    run_cfg = RunConfig(duration=args.duration)
+    run_cfg = RunConfig(duration=args.duration, subpixel=args.subpixel)
+    print("corner refinement:", "sub-pixel" if args.subpixel else "off")
     drv = MujocoTB3Driver(write_scene(scene_cfg, args.model_dir))
 
     s_v_cal, s_w_cal = calibrate_gains(drv, run_cfg)
@@ -68,6 +70,9 @@ def main():
     print("marker residuals: distance band | n | x std mm | y std mm | heading std deg")
     for lo, hi, n, sx, sy, sa, mp, ma in marker_residual_by_distance(run):
         print(f"   {lo:.1f}-{hi:.1f} | {n} | {1000 * sx:.1f} | {1000 * sy:.1f} | {sa:.2f}")
+    print("marker error mean and RMS: distance band | n | x mean/RMS mm | y mean/RMS mm | heading mean/RMS deg")
+    for lo, hi, n, mx, my, ma, rx, ry, ra in marker_bias_by_distance(run):
+        print(f"   {lo:.1f}-{hi:.1f} | {n} | {1000 * mx:.1f}/{1000 * rx:.1f} | {1000 * my:.1f}/{1000 * ry:.1f} | {ma:.2f}/{ra:.2f}")
 
     aniso, cal = marker_measurement_cov_measured, (s_v_cal, s_w_cal)
     variants = [

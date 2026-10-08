@@ -1,0 +1,9 @@
+﻿B filter | first 30 s [mm] | pos RMSE 2nd half [mm] | max [mm] | heading RMSE [deg] | ANEES | inside 95%
+isotropic (original)                 |     56 |   80.0 |   260 |  2.06 |  31.8 | 0.36
+anisotropic, std-fitted              |    270 |   92.3 |   746 |  3.17 |  57.3 | 0.13
+anisotropic, RMS-fitted              |    143 |   97.3 |   633 |  2.59 |  42.2 | 0.15
+isotropic, every 5th update          |    101 |   70.6 |   239 |  1.85 |  19.5 | 0.47
+anisotropic RMS, every 5th update    |    229 |   73.4 |   561 |  2.51 |  24.7 | 0.27
+anisotropic RMS, every 10th update   |    216 |   75.6 |   461 |  2.38 |  18.3 | 0.36
+anisotropic RMS, lateral sigma x5    |     53 |   99.1 |   276 |  2.17 |  40.7 | 0.22
+hybrid (isotropic beyond 1.5 m)      |     56 |   73.2 |   272 |  2.01 |  33.1 | 0.32
