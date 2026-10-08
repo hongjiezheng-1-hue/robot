@@ -200,6 +200,17 @@ Reading the sensitivity results: with exact calibration A is better than B (84 v
 
 Limits of these results (not yet tested): the true gains are constant in the synthetic plant, while the stage-2 MuJoCo measurements show gains that depend on speed (speed scale about 1.0 at low wheel speed and about 0.86 at 2 rad/s or more; effective track 0.35 to 0.42 m), so neither variant models the real plant exactly; the marker pose noise is Gaussian and consistent with the filter's model, whereas the render study shows heavy-tailed heading errors at long range (gating is implemented but untested); marker occlusion by obstacles is not modelled; no data from the MuJoCo robot has been run through the filter yet.
 
+## Stage 5: EKF on MuJoCo data (first attempt invalid, calibration usable)
+
+Code: `sim/mujoco_run.py`, `experiments/replay.py`; run: `notebooks/05_ekf_on_mujoco.ipynb`.
+
+First collection attempt (240 to 300 s of driving, 3000 samples) is **invalid**: the robot hit the corner of an obstacle at about 45 s and stayed stuck, so the odometry ratios (0.188, -0.078, -0.008) and the filter results (position error 340 to 420 mm, ANEES above 365, marker visible in 2% of samples) are artefacts and are not reported as findings. Cause: the path check only tested the planned polyline, but the follower turns when it comes within 0.15 m of a waypoint (corner cutting) and the real robot turns slower than commanded (`s_w` about 0.72). Fixes: the clearance is now checked on a kinematic simulation of the follower with the measured gains (and with unit gains), required above 0.25 m (0.28 m reached after moving the lane to y = -0.08); the collection raises an error if the robot barely moves for 10 s; the lane along y = -0.08 faces the marker so it is in view for a large part of the run. Rendering is also skipped when the marker cannot be in view, because the first run took 984 s (about 0.33 s per frame).
+
+Usable results from that attempt:
+
+- Gain calibration in MuJoCo (one straight run at wheel speed 3 rad/s, one spin at 1 rad/s): `s_v = 0.855`, `s_w = 0.724`, equivalent effective track 0.398 m. This agrees with the stage-2 measurements (0.86 and about 0.72).
+- Marker pose noise, 64 samples taken before the collision (preliminary, only two distance bins): position std x 8.2 mm and y 3.2 mm at 1.1 to 1.5 m (n = 51), x 10.0 mm and y 2.6 mm at 1.5 to 2.0 m (n = 13), heading std 0.87 and 0.58 degrees. The filter's model gives 13.3 and 24.1 mm and 5.1 and 9.1 degrees at the bin centres, so the model looks conservative on these samples; this is not a conclusion because the sample is small and does not cover short or long range.
+
 ## Open items
 
 - Confirm the robot (Burger or Waffle Pi) held by the hardware lab.

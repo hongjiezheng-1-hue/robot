@@ -8,19 +8,45 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from estimation.models import wrap
+from estimation.models import f_unicycle, h_marker_pose, wrap
 
 
 @dataclass
 class RunConfig:
     dt: float = 0.1
-    duration: float = 300.0
+    duration: float = 240.0
     wheel_radius: float = 0.033
     track_nominal: float = 0.288
-    start: tuple = (-1.2, -1.1, 0.0)
-    waypoints: tuple = ((0.9, -1.1), (1.4, -0.1), (1.0, 0.7), (0.0, 1.1), (-1.2, 1.0), (-1.2, -1.1))
-    speeds: tuple = (0.05, 0.10, 0.15, 0.10, 0.05, 0.15)   # nominal speed on the segment that ends at each waypoint
+    start: tuple = (-1.5, -0.08, 0.0)
+    # Lane along y = -0.08 faces the marker (+x) and runs between the two obstacles; then a loop around the room.
+    waypoints: tuple = ((1.3, -0.08), (1.3, 1.1), (-1.5, 1.1), (-1.5, -0.08),
+                        (1.3, -0.08), (1.3, 1.1), (-1.5, 1.1), (-1.5, -0.08))
+    speeds: tuple = (0.05, 0.10, 0.15, 0.10, 0.15, 0.05, 0.10, 0.15)   # nominal speed on the segment that ends at each waypoint
     arrive_radius: float = 0.15
+
+
+def follower_step(pose, wp, cfg):
+    """Waypoint follower: returns the (possibly advanced) waypoint index and the nominal v, w command."""
+    x, y, yaw = pose
+    dx, dy = cfg.waypoints[wp][0] - x, cfg.waypoints[wp][1] - y
+    if np.hypot(dx, dy) < cfg.arrive_radius:
+        wp = (wp + 1) % len(cfg.waypoints)
+        dx, dy = cfg.waypoints[wp][0] - x, cfg.waypoints[wp][1] - y
+    ang_err = wrap(np.arctan2(dy, dx) - yaw)
+    v = cfg.speeds[wp] if abs(ang_err) < 0.5 else 0.02
+    w = float(np.clip(1.5 * ang_err, -0.5, 0.5))
+    return wp, v, w
+
+
+def simulate_follower_path(cfg, s_v=0.86, s_w=0.72, duration=None):
+    """Kinematic prediction of the followed path with the measured odometry gains (turns are slower than commanded)."""
+    pose = np.array(cfg.start, dtype=float)
+    wp, path = 0, []
+    for _ in range(int(round((duration or cfg.duration) / cfg.dt))):
+        wp, v, w = follower_step(pose, wp, cfg)
+        pose = f_unicycle(pose, (s_v * v, s_w * w), cfg.dt)
+        path.append(pose.copy())
+    return np.array(path)
 
 
 def _box_distance(px, py, cx, cy, sx, sy):
@@ -40,6 +66,12 @@ def min_clearance(truth, scene_cfg):
     return float(best)
 
 
+def marker_possibly_visible(pose, marker_world, max_range=4.0, half_fov=np.radians(45.0)):
+    """Cheap geometric pre-check used only to skip rendering frames in which the marker cannot be in view."""
+    z = h_marker_pose(np.asarray(pose, dtype=float), marker_world)
+    return z[0] > 0 and np.hypot(z[0], z[1]) < max_range and abs(np.arctan2(z[1], z[0])) < half_fov
+
+
 def collect_run(drv, scene_cfg, cfg):
     import mujoco
 
@@ -49,6 +81,7 @@ def collect_run(drv, scene_cfg, cfg):
 
     renderer = mujoco.Renderer(drv.model, height=scene_cfg.camera_height, width=scene_cfg.camera_width)
     K = camera_intrinsics(scene_cfg.camera_fovy, scene_cfg.camera_width, scene_cfg.camera_height)
+    marker_world = np.array([scene_cfg.station_x, scene_cfg.station_y, scene_cfg.station_yaw])
     sub = int(round(cfg.dt / drv.control_dt))
     n = int(round(cfg.duration / cfg.dt))
     drv.reset(*cfg.start)
@@ -59,31 +92,30 @@ def collect_run(drv, scene_cfg, cfg):
     truth = np.zeros((n, 3))
     marker = np.full((n, 3), np.nan)
     wp = 0
+    v_log = np.zeros(n)
     for k in range(n):
-        x, y, yaw = drv.true_pose()
-        dx, dy = cfg.waypoints[wp][0] - x, cfg.waypoints[wp][1] - y
-        if np.hypot(dx, dy) < cfg.arrive_radius:
-            wp = (wp + 1) % len(cfg.waypoints)
-            dx, dy = cfg.waypoints[wp][0] - x, cfg.waypoints[wp][1] - y
-        ang_err = wrap(np.arctan2(dy, dx) - yaw)
-        v = cfg.speeds[wp] if abs(ang_err) < 0.5 else 0.02
-        w = float(np.clip(1.5 * ang_err, -0.5, 0.5))
+        wp, v, w = follower_step(drv.true_pose(), wp, cfg)
+        v_log[k] = v
         wr = (v + w * cfg.track_nominal / 2) / cfg.wheel_radius
         wl = (v - w * cfg.track_nominal / 2) / cfg.wheel_radius
         for _ in range(sub):
             drv.step(wl, wr)
         ticks.append(drv.ticks())
         truth[k] = drv.true_pose()
-        renderer.update_scene(drv.data, camera=scene_cfg.camera_name)
-        ids, corners = detect_markers(renderer.render(), scene_cfg.marker_dictionary)
-        if ids is not None and scene_cfg.marker_id in ids.flatten():
-            c = corners[list(ids.flatten()).index(scene_cfg.marker_id)].reshape(4, 2)
-            z = estimate_marker_pose(c, K, scene_cfg.marker_size, scene_cfg.camera_pos)
-            if z is not None:
-                marker[k] = z
+        if k >= 150:
+            moved = np.sum(np.linalg.norm(np.diff(truth[k - 100:k + 1, :2], axis=0), axis=1))
+            if moved < 0.03 and v_log[k - 100:k + 1].mean() > 0.03:
+                raise RuntimeError(f"robot appears stuck at t = {k * cfg.dt:.0f} s, pose {truth[k]}: possible collision")
+        if marker_possibly_visible(truth[k], marker_world):
+            renderer.update_scene(drv.data, camera=scene_cfg.camera_name)
+            ids, corners = detect_markers(renderer.render(), scene_cfg.marker_dictionary)
+            if ids is not None and scene_cfg.marker_id in ids.flatten():
+                c = corners[list(ids.flatten()).index(scene_cfg.marker_id)].reshape(4, 2)
+                z = estimate_marker_pose(c, K, scene_cfg.marker_size, scene_cfg.camera_pos)
+                if z is not None:
+                    marker[k] = z
     wheel_omega = np.diff(np.array(ticks), axis=0) * (2 * np.pi / TICKS_PER_REV) / cfg.dt
-    return dict(dt=cfg.dt, pose0=pose0, wheel_omega=wheel_omega, truth=truth, marker=marker,
-                marker_world=np.array([scene_cfg.station_x, scene_cfg.station_y, scene_cfg.station_yaw]),
+    return dict(dt=cfg.dt, pose0=pose0, wheel_omega=wheel_omega, truth=truth, marker=marker, marker_world=marker_world,
                 wheel_radius=cfg.wheel_radius, track_nominal=cfg.track_nominal)
 
 

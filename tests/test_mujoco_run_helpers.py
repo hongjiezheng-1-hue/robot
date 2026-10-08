@@ -10,8 +10,10 @@ import numpy as np
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from sim.mujoco_run import RunConfig, _box_distance, min_clearance  # noqa: E402
+from sim.mujoco_run import RunConfig, _box_distance, marker_possibly_visible, min_clearance, simulate_follower_path  # noqa: E402
 from sim.scene import SceneConfig  # noqa: E402
+
+ROBOT_REACH = 0.25   # [m] conservative distance from the axle centre to the robot's outline (rear casters reach about 0.19 m)
 
 
 def test_box_distance():
@@ -20,15 +22,21 @@ def test_box_distance():
     assert abs(_box_distance(1.0, 1.0, 0.0, 0.0, 1.0, 1.0) - np.hypot(0.5, 0.5)) < 1e-12
 
 
-def test_default_waypoints_keep_clear_of_obstacles():
+def test_followed_path_keeps_clear_of_obstacles():
+    """The previous planned-polyline check missed corner cutting and slow turns, and the robot hit an obstacle."""
     scene, cfg = SceneConfig(), RunConfig()
-    pts = [cfg.start[:2]] + list(cfg.waypoints)
-    path = []
-    for a, b in zip(pts, pts[1:] + pts[:1]):
-        for t in np.linspace(0, 1, 60):
-            path.append([a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1]), 0.0])
-    clearance = min_clearance(np.array(path), scene)
-    assert clearance > 0.20, f"planned path clearance {clearance:.2f} m is too small for the robot footprint"
+    for s_v, s_w in ((0.86, 0.72), (1.0, 1.0)):
+        path = simulate_follower_path(cfg, s_v, s_w, duration=600.0)
+        clearance = min_clearance(path, scene)
+        assert clearance > ROBOT_REACH, f"followed path comes within {clearance:.2f} m of an obstacle (gains {s_v}, {s_w})"
+
+
+def test_marker_faces_the_lane():
+    cfg = RunConfig()
+    path = simulate_follower_path(cfg, duration=600.0)
+    marker = np.array([1.85, 0.0, np.pi])
+    visible = np.mean([marker_possibly_visible(p, marker) for p in path])
+    assert visible > 0.15, f"marker could be in view for only {100 * visible:.0f}% of the path"
 
 
 if __name__ == "__main__":
