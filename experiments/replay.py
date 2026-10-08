@@ -26,12 +26,27 @@ def run_from_synthetic(cfg, data):
                 marker_world=np.array(cfg.marker), wheel_radius=cfg.wheel_radius, track_nominal=cfg.track_nominal)
 
 
-def replay(run, estimate=False, gains=(1.0, 1.0), gate=None, noise=None, seed=0):
+def inflated(k):
+    """Default odometry noise scaled by k."""
+    d = OdometryNoise()
+    return OdometryNoise(d.v_floor * k, d.v_rel * k, d.w_floor * k, d.w_rel * k)
+
+
+def load_run(path):
+    """Load a run saved with np.savez, turning the scalar entries back into floats."""
+    data = np.load(path)
+    run = {k: data[k] for k in data.files}
+    for k in ("dt", "wheel_radius", "track_nominal"):
+        run[k] = float(run[k])
+    return run
+
+
+def replay(run, estimate=False, gains=(1.0, 1.0), gate=None, noise=None, seed=0, meas_cov=None, gain_fn=None):
     """Run one EKF variant over the log. Returns pose errors, NEES, gain history and the number of rejected updates."""
     rng = np.random.default_rng(10_000 + seed)
     x0 = run["pose0"] + rng.multivariate_normal(np.zeros(3), P0)
     ekf = MarkerEKF(x0, P0, run["marker_world"], run["wheel_radius"], run["track_nominal"], scales=gains,
-                    estimate_scales=estimate, gate=gate, noise=noise)
+                    estimate_scales=estimate, gate=gate, noise=noise, meas_cov=meas_cov, gain_fn=gain_fn)
     errs, nees, hist, rejected = [], [], [], 0
     for k in range(len(run["truth"])):
         ekf.predict(run["wheel_omega"][k, 0], run["wheel_omega"][k, 1], run["dt"])

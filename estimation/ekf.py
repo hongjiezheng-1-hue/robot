@@ -39,9 +39,32 @@ def marker_measurement_cov(distance, focal_px=530.5, marker_size=0.12, corner_si
     return np.diag([sigma_pos**2, sigma_pos**2, sigma_ang**2])
 
 
+def marker_measurement_cov_measured(z, depth_coeff=0.004, lateral_coeff=0.0005, pos_floor=0.0005,
+                                    ang_coeff=0.065, ang_floor=0.005):
+    """Anisotropic covariance fitted to the MuJoCo residual study (docs/findings.md, stage 5).
+
+    The position error is mostly along the line of sight (depth): sigma_depth = depth_coeff * d^2,
+    sigma_lateral = lateral_coeff * d^2, rotated to the robot frame by the bearing of the marker;
+    heading sigma = ang_floor + ang_coeff * d. Fitted to head-on views only.
+    """
+    d = float(np.hypot(z[0], z[1]))
+    bearing = float(np.arctan2(z[1], z[0]))
+    s_depth = np.hypot(pos_floor, depth_coeff * d * d)
+    s_lat = np.hypot(pos_floor, lateral_coeff * d * d)
+    c, s = np.cos(bearing), np.sin(bearing)
+    rot = np.array([[c, -s], [s, c]])
+    R = np.zeros((3, 3))
+    R[:2, :2] = rot @ np.diag([s_depth**2, s_lat**2]) @ rot.T
+    R[2, 2] = (ang_floor + ang_coeff * d) ** 2
+    return R
+
+
 class MarkerEKF:
     def __init__(self, x0, P0, marker, wheel_radius=0.033, track_nominal=0.288, scales=(1.0, 1.0),
-                 estimate_scales=False, scale_sigma0=0.2, scale_step_sigma=1e-3, noise=None, gate=None):
+                 estimate_scales=False, scale_sigma0=0.2, scale_step_sigma=1e-3, noise=None, gate=None,
+                 meas_cov=None, gain_fn=None):
+        self.meas_cov = meas_cov              # callable z -> 3x3 covariance, None uses the isotropic distance model
+        self.gain_fn = gain_fn                # callable (v_nom, w_nom) -> (s_v, s_w) for speed-dependent fixed gains
         self.marker = np.asarray(marker, dtype=float)
         self.r, self.b = wheel_radius, track_nominal
         self.estimate_scales = estimate_scales
@@ -72,7 +95,7 @@ class MarkerEKF:
 
     def predict(self, w_left, w_right, dt):
         v_nom, w_nom = encoders_to_vw(w_left, w_right, self.r, self.b)
-        s_v, s_w = self.scales
+        s_v, s_w = self.gain_fn(v_nom, w_nom) if (self.gain_fn is not None and not self.estimate_scales) else self.scales
         u = (s_v * v_nom, s_w * w_nom)
         pose = self.x[:3]
         F3 = F_unicycle(pose, u, dt)
@@ -104,7 +127,7 @@ class MarkerEKF:
         y = np.asarray(z, dtype=float) - zhat
         y[2] = wrap(y[2])
         if R is None:
-            R = marker_measurement_cov(np.hypot(z[0], z[1]))
+            R = self.meas_cov(z) if self.meas_cov is not None else marker_measurement_cov(np.hypot(z[0], z[1]))
         S = H @ self.P @ H.T + R
         if self.gate is not None and float(y @ np.linalg.solve(S, y)) > self.gate:
             return False

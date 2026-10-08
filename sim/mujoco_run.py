@@ -119,6 +119,50 @@ def collect_run(drv, scene_cfg, cfg):
                 wheel_radius=cfg.wheel_radius, track_nominal=cfg.track_nominal)
 
 
+def make_gain_fn(speeds, yaw_rates, s_v_table, s_w_table):
+    """Bilinear lookup of the odometry gains from tables over nominal speed and |nominal yaw rate|, clamped to the grid."""
+    from scipy.interpolate import RegularGridInterpolator
+
+    f_v = RegularGridInterpolator((speeds, yaw_rates), s_v_table, bounds_error=False, fill_value=None)
+    f_w = RegularGridInterpolator((speeds, yaw_rates), s_w_table, bounds_error=False, fill_value=None)
+
+    def gain_fn(v_nom, w_nom):
+        p = (float(np.clip(abs(v_nom), speeds[0], speeds[-1])), float(np.clip(abs(w_nom), yaw_rates[0], yaw_rates[-1])))
+        return float(f_v(p)), float(f_w(p))
+
+    return gain_fn
+
+
+def calibrate_gain_table(drv, cfg, speeds=(0.03, 0.06, 0.10, 0.15), yaw_rates=(0.0, 0.15, 0.3, 0.5), seconds=8.0):
+    """Measure the odometry gains for arcs (forward speed and yaw rate together) on a driver in an obstacle-free room."""
+    s_v = np.full((len(speeds), len(yaw_rates)), np.nan)
+    s_w = np.full_like(s_v, np.nan)
+    for i, v in enumerate(speeds):
+        for j, w in enumerate(yaw_rates):
+            wr = (v + w * cfg.track_nominal / 2) / cfg.wheel_radius
+            wl = (v - w * cfg.track_nominal / 2) / cfg.wheel_radius
+            drv.reset(0.0, 0.0, 0.0)
+            hist = []
+            for _ in range(int(seconds / drv.control_dt)):
+                enc = drv.step(wl, wr)
+                x, y, yaw = drv.true_pose()
+                hist.append([enc.time, enc.omega[0], enc.omega[1], x, y, yaw])
+            s = np.array(hist[-int(1.0 / drv.control_dt):])
+            dt = s[-1, 0] - s[0, 0]
+            heading = np.unwrap(s[:, 5])
+            mid = heading.mean()
+            v_true = ((s[-1, 3] - s[0, 3]) * np.cos(mid) + (s[-1, 4] - s[0, 4]) * np.sin(mid)) / dt
+            w_true = (heading[-1] - heading[0]) / dt
+            wl_m, wr_m = s[:, 1].mean(), s[:, 2].mean()
+            v_nom = cfg.wheel_radius * (wr_m + wl_m) / 2
+            w_nom = cfg.wheel_radius * (wr_m - wl_m) / cfg.track_nominal
+            s_v[i, j] = v_true / v_nom
+            if abs(w_nom) > 0.05:
+                s_w[i, j] = w_true / w_nom
+    s_w[:, 0] = s_w[:, 1]    # the yaw gain is irrelevant when there is no yaw rate; reuse the lowest measured rate
+    return make_gain_fn(np.array(speeds), np.array(yaw_rates), s_v, s_w), dict(speeds=speeds, yaw_rates=yaw_rates, s_v=s_v, s_w=s_w)
+
+
 def calibrate_gains(drv, cfg, straight_wheel=3.0, spin_wheel=1.0, seconds=8.0):
     """Estimate the odometry gains from one straight run and one spin at a single operating point."""
     def run(wl, wr):
