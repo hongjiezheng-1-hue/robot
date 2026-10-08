@@ -260,6 +260,61 @@ Findings:
 
 Planned next (not yet done): an anisotropic marker noise model with coefficients taken from the residual table, a speed- and yaw-rate-dependent odometry gain table calibrated with arc motions in an obstacle-free room (a fairer fixed-gain baseline), and a sensitivity study of the odometry process-noise scale.
 
+## Stage 6: the same experiment run locally (MuJoCo 3.3.7) with the improved filter variants
+
+Run with `experiments/mujoco_ekf.py` (output in `results/mujoco_ekf_local_mujoco3.3.7.txt`; environment in `docs/dev_environment.md`): 2400 samples, marker pose available in 48% of samples, smallest clearance 0.24 m. **These numbers come from MuJoCo 3.3.7 and differ from the Colab run (MuJoCo 3.15.0) above, so they must not be mixed with it.**
+
+Dependence on the MuJoCo version:
+
+| Quantity | Colab, 3.15.0 | Local, 3.3.7 |
+|---|---|---|
+| Single-point calibration `s_v`, `s_w` | 0.855, 0.724 | 0.869, 0.725 |
+| Linear ratio, 0.02 to 0.07 / 0.07 to 0.12 / 0.12 to 0.25 m/s | 0.940 / 0.853 / 0.854 | 0.931 / 0.869 / 0.865 |
+| Yaw ratio while driving, 0.10 to 0.25 / 0.25 to 0.60 rad/s | 0.611 / 0.689 | 0.842 / 0.727 |
+
+The linear behaviour is similar, the yaw behaviour while driving is not (0.61 against 0.84 at low yaw rates). The odometry error of the simulated robot therefore depends on the simulator version, a reproducibility risk for any quantity that is calibrated.
+
+Gain table measured on arcs in an obstacle-free room (rows: nominal speed 0.03, 0.06, 0.10, 0.15 m/s; columns: yaw rate 0, 0.15, 0.3, 0.5 rad/s):
+
+| s_v | 0 | 0.15 | 0.3 | 0.5 |
+|---|---|---|---|---|
+| 0.03 | 0.968 | 0.857 | 0.793 | 0.535 |
+| 0.06 | 0.902 | 0.895 | 0.865 | 0.765 |
+| 0.10 | 0.869 | 0.867 | 0.880 | 0.855 |
+| 0.15 | 0.867 | 0.857 | 0.856 | 0.866 |
+
+| s_w | 0.15 | 0.3 | 0.5 |
+|---|---|---|---|
+| 0.03 | 0.839 | 0.809 | 0.709 |
+| 0.06 | 0.877 | 0.879 | 0.802 |
+| 0.10 | 0.854 | 0.859 | 0.825 |
+| 0.15 | 0.646 | 0.765 | 0.831 |
+
+Variants replayed on this run:
+
+| Variant | Position RMSE [mm] | Second half [mm] | Max [mm] | Heading RMSE [deg] | ANEES (ideal 3) | Inside 95% | Rejected |
+|---|---|---|---|---|---|---|---|
+| A0 nominal gains | 1199 | 1348 | 2916 | 40.2 | 2169 | 0.18 | 0 |
+| A single-point | 185 | 183 | 413 | 5.6 | 67.6 | 0.02 | 0 |
+| A single-point + gate | 185 | 183 | 413 | 5.6 | 67.6 | 0.02 | 0 |
+| A gain table | 102 | 96 | 250 | 3.0 | 28.3 | 0.26 | 0 |
+| A table + anisotropic R | 158 | 93 | 746 | 3.9 | 71.7 | 0.17 | 0 |
+| A table + anisotropic R, Q x2 | 147 | 111 | 712 | 3.6 | 35.7 | 0.39 | 0 |
+| A table + anisotropic R, Q x4 | 134 | 126 | 627 | 3.4 | 18.4 | 0.50 | 0 |
+| B | 107 | 80 | 260 | 2.1 | 31.8 | 0.36 | 0 |
+| B + anisotropic R | 164 | 92 | 746 | 3.2 | 57.3 | 0.13 | 0 |
+| B + anisotropic R, Q x2 | 149 | 107 | 713 | 2.7 | 31.6 | 0.27 | 0 |
+| B + anisotropic R, Q x4 | 144 | 117 | 629 | 4.0 | 17.7 | 0.48 | 0 |
+
+Findings (single run per variant, MuJoCo 3.3.7 only, so differences between neighbouring rows are not established):
+
+1. The gain table measured on arcs is a much better fixed-gain baseline than the single-point calibration: 96 against 183 mm in the second half and ANEES 28 against 68.
+2. B (80 mm, heading 2.1 degrees, ANEES 32) is close to the gain-table filter (96 mm, 3.0 degrees, ANEES 28): slightly better in position and heading and about equal in consistency. The advantage of B over the single-point baseline reproduces (80 against 183 mm), but against the better fixed-gain baseline it is small and not conclusive.
+3. The anisotropic marker noise model made both families worse in the maximum error (250 to 746 mm for the table filter) and in ANEES (28 to 72 for the table filter, 32 to 57 for B). The reason is not established. Hypotheses, none tested: it trusts the lateral and heading measurements too much at long range because the position and heading errors of one marker measurement are correlated and the model treats them as independent; it was fitted to head-on views only while the replay includes other views.
+4. Scaling the odometry process noise improves consistency (ANEES 72, 36, 18 for factors 1, 2, 4 with the table filter) but never reaches 3 and does not improve accuracy.
+5. No update was rejected by the gate in this run, since the filters stay close enough to the truth; the earlier Colab run showed the opposite.
+6. All variants remain overconfident (ANEES at least 17).
+
 ## Open items
 
 - Confirm the robot (Burger or Waffle Pi) held by the hardware lab.
