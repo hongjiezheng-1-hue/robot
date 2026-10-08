@@ -211,6 +211,55 @@ Usable results from that attempt:
 - Gain calibration in MuJoCo (one straight run at wheel speed 3 rad/s, one spin at 1 rad/s): `s_v = 0.855`, `s_w = 0.724`, equivalent effective track 0.398 m. This agrees with the stage-2 measurements (0.86 and about 0.72).
 - Marker pose noise, 64 samples taken before the collision (preliminary, only two distance bins): position std x 8.2 mm and y 3.2 mm at 1.1 to 1.5 m (n = 51), x 10.0 mm and y 2.6 mm at 1.5 to 2.0 m (n = 13), heading std 0.87 and 0.58 degrees. The filter's model gives 13.3 and 24.1 mm and 5.1 and 9.1 degrees at the bin centres, so the model looks conservative on these samples; this is not a conclusion because the sample is small and does not cover short or long range.
 
+### Stage 5: second attempt (valid run)
+
+Run: 2400 samples (240 s), marker pose available in 47% of samples, smallest clearance 0.25 m, no collision; the robot drives a lane along y = -0.08 facing the marker, then a loop around the room, at nominal speeds 0.05, 0.10 and 0.15 m/s. Single-point calibration in the same session: `s_v = 0.855`, `s_w = 0.724`.
+
+Odometry ratio (true motion over nominal-encoder motion) by speed, from the run itself:
+
+| Quantity | Range | Median ratio | n |
+|---|---|---|---|
+| Linear speed, near-straight | 0.02 to 0.07 m/s | 0.940 | 1056 |
+| Linear speed, near-straight | 0.07 to 0.12 m/s | 0.853 | 447 |
+| Linear speed, near-straight | 0.12 to 0.25 m/s | 0.854 | 381 |
+| Yaw rate while driving | 0.10 to 0.25 rad/s | 0.611 | 97 |
+| Yaw rate while driving | 0.25 to 0.60 rad/s | 0.689 | 360 |
+
+The gains depend on speed and yaw rate, and the yaw gain while driving (0.61 to 0.69) is lower than the in-place spin calibration (0.724), so a single-point calibration does not transfer to arcs. The synthetic study assumed constant gains.
+
+Marker pose residuals (measured minus true) with the robot facing the marker, so the robot x axis is the line of sight:
+
+| Distance [m] | n | x (depth) std [mm] | y (lateral) std [mm] | Heading std [deg] | Filter model position sigma [mm] | Filter model heading sigma [deg] |
+|---|---|---|---|---|---|---|
+| 0.2 to 0.7 | 26 | 1.1 | 0.6 | 1.21 | 1.9 | 0.87 |
+| 0.7 to 1.1 | 116 | 3.1 | 0.4 | 2.69 | 6.4 | 2.61 |
+| 1.1 to 1.5 | 114 | 4.9 | 0.7 | 5.66 | 13.3 | 5.13 |
+| 1.5 to 2.0 | 189 | 10.9 | 0.8 | 7.11 | 24.1 | 9.06 |
+| 2.0 to 3.5 | 685 | 34.4 | 3.9 | 8.02 | 59.4 | 21.95 |
+
+The position error is mostly along the line of sight (depth), about 8 to 10 times the lateral error, which supports the earlier hypothesis of a depth error from the apparent marker size. The isotropic model over-estimates depth about 1.7 times and lateral error 5 to 30 times; the heading model is slightly low at short range and high at long range. These are standard deviations and do not include a systematic bias, which has not been examined; they cover only head-on views.
+
+EKF variants replayed on this run (the filters never see the truth):
+
+| Variant | Position RMSE [mm] | Position RMSE, second half [mm] | Max [mm] | Heading RMSE [deg] | ANEES (ideal 3) | Inside 95% bound | Rejected updates |
+|---|---|---|---|---|---|---|---|
+| A0 nominal gains | 2963 | 3730 | 6299 | 105.8 | 159155 | 0.09 | 0 |
+| A single-point calibration | 377 | 387 | 817 | 12.4 | 133.6 | 0.005 | 0 |
+| A calibrated + gate | 739 | 972 | 1636 | 40.0 | 209.2 | 0.005 | 553 |
+| B estimated gains | 312 | 138 | 908 | 10.7 | 58.8 | 0.26 | 0 |
+| B + gate | 313 | 139 | 908 | 10.7 | 58.9 | 0.26 | 1 |
+
+B's final gains are `s_v = 0.959` and `s_w = 0.673`.
+
+Findings:
+
+1. B is better than the single-point-calibrated A in the second half (138 against 387 mm), as in the synthetic study, but every variant is overconfident (ANEES 59 to 134 against an ideal 3) and errors reach 0.8 to 0.9 m.
+2. Position error drops to a few millimetres while the marker is in view in the lane and grows to about 1 m within roughly 45 s of dead reckoning around the room.
+3. Gating at the 99.9% level hurts here: with A the filter drifts away, genuine marker measurements look like outliers and 553 of them are rejected (972 mm against 387 mm). Gating is only safe when the filter is already close.
+4. B's `s_w` (0.673) agrees with the measured yaw ratio while driving (0.61 to 0.69), but its `s_v` (0.959) is higher than any measured linear ratio, so it is probably absorbing other errors instead of estimating the linear gain.
+
+Planned next (not yet done): an anisotropic marker noise model with coefficients taken from the residual table, a speed- and yaw-rate-dependent odometry gain table calibrated with arc motions in an obstacle-free room (a fairer fixed-gain baseline), and a sensitivity study of the odometry process-noise scale.
+
 ## Open items
 
 - Confirm the robot (Burger or Waffle Pi) held by the hardware lab.
