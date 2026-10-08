@@ -1,6 +1,5 @@
 numpy
 scipy
 matplotlib
-control
 mujoco
 opencv-contrib-python

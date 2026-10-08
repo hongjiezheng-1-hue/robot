@@ -140,7 +140,7 @@ Consequence for the EKF (a design hypothesis to test, not yet a result): the hea
 
 ## Stage 4: EKF with fixed and estimated odometry gains (synthetic validation only)
 
-Code: `estimation/ekf.py`, `sim/synthetic.py`; experiments: `experiments/ekf_synthetic.py`, `experiments/ekf_sensitivity.py` (outputs in `results/`); tests: `tests/test_ekf.py`, `tests/test_models.py`.
+Code: `estimation/ekf.py`, `sim/synthetic.py`; experiments: `experiments/ekf_synthetic.py`, `experiments/ekf_sensitivity.py` (outputs in `results/synthetic/`); tests: `tests/test_ekf.py`, `tests/test_models.py`.
 
 Design:
 
@@ -202,7 +202,7 @@ Limits of these results (not yet tested): the true gains are constant in the syn
 
 ## Stage 5: EKF on MuJoCo data (first attempt invalid, calibration usable)
 
-Code: `sim/mujoco_run.py`, `experiments/replay.py`; run: `notebooks/05_ekf_on_mujoco.ipynb`.
+Code: `sim/mujoco_run.py`, `experiments/replay.py`; run: `notebooks/05_ekf_on_mujoco.ipynb` (the Colab runs below used the first version of this notebook; it was later merged with the improved-filter notebook and now contains all the variants), or `experiments/mujoco_ekf.py` locally.
 
 First collection attempt (240 to 300 s of driving, 3000 samples) is **invalid**: the robot hit the corner of an obstacle at about 45 s and stayed stuck, so the odometry ratios (0.188, -0.078, -0.008) and the filter results (position error 340 to 420 mm, ANEES above 365, marker visible in 2% of samples) are artefacts and are not reported as findings. Cause: the path check only tested the planned polyline, but the follower turns when it comes within 0.15 m of a waypoint (corner cutting) and the real robot turns slower than commanded (`s_w` about 0.72). Fixes: the clearance is now checked on a kinematic simulation of the follower with the measured gains (and with unit gains), required above 0.25 m (0.28 m reached after moving the lane to y = -0.08); the collection raises an error if the robot barely moves for 10 s; the lane along y = -0.08 faces the marker so it is in view for a large part of the run. Rendering is also skipped when the marker cannot be in view, because the first run took 984 s (about 0.33 s per frame).
 
@@ -262,7 +262,7 @@ Planned next (not yet done): an anisotropic marker noise model with coefficients
 
 ## Stage 6: the same experiment run locally (MuJoCo 3.3.7) with the improved filter variants
 
-Run with `experiments/mujoco_ekf.py` (output in `results/mujoco_ekf_local_mujoco3.3.7.txt`; environment in `docs/dev_environment.md`): 2400 samples, marker pose available in 48% of samples, smallest clearance 0.24 m. **These numbers come from MuJoCo 3.3.7 and differ from the Colab run (MuJoCo 3.15.0) above, so they must not be mixed with it.**
+Run with `experiments/mujoco_ekf.py` (output in `results/mujoco_3.3.7/mujoco_ekf.txt`; environment in `docs/dev_environment.md`): 2400 samples, marker pose available in 48% of samples, smallest clearance 0.24 m. **These numbers come from MuJoCo 3.3.7 and differ from the Colab run (MuJoCo 3.15.0) above, so they must not be mixed with it.**
 
 Dependence on the MuJoCo version:
 
@@ -317,7 +317,7 @@ Findings (single run per variant, MuJoCo 3.3.7 only, so differences between neig
 
 ## Stage 7: why the anisotropic marker noise model was worse, and sub-pixel corner refinement (MuJoCo 3.3.7)
 
-Scripts: `experiments/noise_model_study.py`, `experiments/mujoco_ekf.py --subpixel`; outputs in `results/`. Two local runs of 2400 samples: corner refinement off (the stage 6 run) and on. Single runs, so small differences are not established.
+Scripts: `experiments/noise_model_study.py`, `experiments/mujoco_ekf.py --subpixel`; outputs in `results/mujoco_3.3.7/`. Two local runs of 2400 samples: corner refinement off (the stage 6 run) and on. Single runs, so small differences are not established.
 
 Diagnosis on the run without refinement:
 
