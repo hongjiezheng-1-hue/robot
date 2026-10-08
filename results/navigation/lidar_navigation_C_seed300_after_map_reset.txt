@@ -1,0 +1,10 @@
+MuJoCo 3.3.7 | variant C
+stand-off pose [0.9 0.  0. ], dock pose [1.4 0.  0. ]
+trial 0:  75 s, 9 plans, no contact (0 steps), min clearance 214 mm, estimator 30 mm (max 49), dock along 3 mm lateral 1 mm heading -0.1 deg -> DOCKED
+trial 1:  74 s, 6 plans, no contact (0 steps), min clearance 223 mm, estimator 149 mm (max 296), dock along 0 mm lateral 1 mm heading -0.1 deg -> DOCKED
+trial 2:  73 s, 6 plans, no contact (0 steps), min clearance 190 mm, estimator 149 mm (max 341), dock along 4 mm lateral -3 mm heading 0.8 deg -> DOCKED
+trial 3:  69 s, 7 plans, no contact (0 steps), min clearance 175 mm, estimator 45 mm (max 78), dock along 2 mm lateral 1 mm heading -0.0 deg -> DOCKED
+trial 4:  80 s, 10 plans, no contact (0 steps), min clearance 198 mm, estimator 60 mm (max 108), dock along 2 mm lateral 4 mm heading -0.7 deg -> DOCKED
+trial 5:  74 s, 10 plans, no contact (0 steps), min clearance 174 mm, estimator 50 mm (max 143), dock along 1 mm lateral -0 mm heading 0.2 deg -> DOCKED
+
+variant C, 6 trials: docked 6 / 6, collisions 0, planning failures 0

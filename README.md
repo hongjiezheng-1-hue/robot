@@ -14,16 +14,16 @@ A TurtleBot3 with a 2D LiDAR and a camera in MuJoCo navigates a room with obstac
 | Driver layer (wheel-speed loop on the simulated motors, encoders) | Done and validated in MuJoCo |
 | Scene (room, obstacles, ArUco station), camera, marker pose from corners | Done and validated in MuJoCo |
 | EKF with fixed odometry gains (A) and gains estimated online (B) | Done; validated on synthetic and MuJoCo data. The filters are still overconfident on MuJoCo data (see findings) |
-| LiDAR, obstacle avoidance, LQR tracker, docking | Not started |
+| LQR tracker, LiDAR obstacle avoidance (unknown S-shaped board course), docking at the marker | Working in simulation with the EKF in the loop; see findings stages 9 and 10 for the numbers and the limits (one course, provisional dock tolerance, LiDAR parameters not checked against the real sensor) |
 | Hardware | Not started (the lab was not open to external use this week) |
 | `main.py` (single-command demonstration) | Placeholder, not implemented |
 
 ## Repository layout
 
 ```
-perception/   ArUco detection and marker pose from the detected corners
+perception/   ArUco detection, marker pose from the corners, LiDAR model, occupancy grid
 estimation/   motion and measurement models, EKF (fixed or estimated odometry gains)
-control/      (empty: the controller is not written yet)
+control/      reference trajectory, LQR tracker, grid planner (A*), docking geometry
 drivers/      wheel-speed loop and the MuJoCo TurtleBot3 driver (the interface a hardware driver would replace)
 sim/          scene generation, data collection and calibration on MuJoCo, a synthetic plant
 experiments/  replay and evaluation, comparisons, noise-model study, visualisation, interactive viewer

@@ -1,0 +1,12 @@
+MuJoCo 3.3.7 | variant table
+stand-off pose [0.9 0.  0. ], dock pose [1.4 0.  0. ]
+trial 0:  81 s, 18 plans, no contact (0 steps), min clearance 179 mm, estimator 113 mm (max 209), dock along 1 mm lateral -7 mm heading 1.5 deg -> DOCKED
+trial 1:  74 s, 10 plans, no contact (0 steps), min clearance 202 mm, estimator 71 mm (max 139), dock along 4 mm lateral -0 mm heading 0.2 deg -> DOCKED
+trial 2:  76 s, 7 plans, no contact (0 steps), min clearance 179 mm, estimator 136 mm (max 247), dock along 4 mm lateral 2 mm heading -0.2 deg -> DOCKED
+trial 3:  75 s, 10 plans, no contact (0 steps), min clearance 187 mm, estimator 39 mm (max 62), dock along 2 mm lateral 4 mm heading -0.7 deg -> DOCKED
+trial 4:  75 s, 9 plans, no contact (0 steps), min clearance 205 mm, estimator 12 mm (max 37), dock along 1 mm lateral 2 mm heading -0.3 deg -> DOCKED
+trial 5:  72 s, 8 plans, no contact (0 steps), min clearance 201 mm, estimator 63 mm (max 120), dock along 5 mm lateral 3 mm heading -0.4 deg -> DOCKED
+trial 6:  72 s, 8 plans, no contact (0 steps), min clearance 223 mm, estimator 95 mm (max 161), dock along 1 mm lateral -0 mm heading 0.2 deg -> DOCKED
+trial 7:  77 s, 11 plans, no contact (0 steps), min clearance 202 mm, estimator 66 mm (max 178), dock along 2 mm lateral 2 mm heading -0.3 deg -> DOCKED
+
+variant table, 8 trials: docked 8 / 8, collisions 0, planning failures 0

@@ -398,9 +398,63 @@ Findings:
 
 Limits: the gain table was calibrated in the same simulator under ideal conditions, which a real robot will not allow; with a noisier or coarser calibration the online estimation (B or C) may matter more, so these results cannot simply be transferred to hardware. Only MuJoCo 3.3.7 and three paths were used, and the simulator is deterministic, so "independent" means independent paths. The gain table needs 16 short runs in an obstacle-free room.
 
+## Stage 9: LQR trajectory tracking with the EKF in the loop (MuJoCo 3.3.7)
+
+Setup: `experiments/lqr_tracking.py`, `sim/closed_loop.py`, `control/`. The reference is a 10.5 m loop of the room with rounded corners that ends in a head-on approach to the charging station (131 s at 0.08 m/s). The LQR tracker (error model in the robot frame, discrete gains recomputed at every step, Bryson weights 0.10 m, 0.05 m, 10 degrees and 0.05 m/s, 0.3 rad/s) acts on the **estimated** pose only; the truth is logged after each step. The true start is offset from the nominal mark (5 cm, 3 degrees, one standard deviation) while the robot believes it is at the mark. Three trials per variant, with speeds 0.05, 0.08 and 0.12 m/s in turn (speed and start offset are therefore confounded). Dock tolerance (provisional, to be confirmed with staff): lateral below 3 cm, along-track below 5 cm, heading below 5 degrees.
+
+| Variant | Docked in tolerance | Tracking RMSE [mm] (per trial) | Estimator position RMSE [mm] |
+|---|---|---|---|
+| table, command compensated | 2 / 3 | 907, 67, 56 | 1063, 61, 50 |
+| table, no compensation | 2 / 3 | 900, 92, 53 | 1038, 83, 57 |
+| single-point gains | 0 / 3 | 631, 634, 612 | 839, 720, 624 |
+| B (gains estimated online) | 3 / 3 | 108, 105, 64 | 101, 94, 62 |
+| C (table x online correction) | 3 / 3 | 103, 101, 52 | 99, 95, 48 |
+
+Findings:
+
+1. When the filter is good the loop works: the final dock error was 1 to 29 mm along-track, 0 to 6 mm lateral and below 1 degree in every trial that did not diverge, with tracking RMSE 52 to 108 mm. The tracking error is of the same size as the estimator error (for example 103 against 99 mm), so the estimator, not the LQR, limits the tracking accuracy.
+2. The single failure of the table variants (trial 0, 0.05 m/s, with and without command compensation) is estimator drift without the marker. On the long leg facing away from the marker the filter has no correction for about 90 s; the heading error grew to about 7 degrees, the robot (which trusts the estimate) left its reference line and the estimate then diverged by metres. The robot was about 0.16 m from the south wall at that moment, so it probably touched the wall (contacts were not logged in this experiment). Variant C had the same drift (heading error up to about 9 degrees) but the marker came back into view in time; this is not evidence that C is better, only that it was less unlucky in one trial.
+3. The single-point odometry calibration fails closed-loop in all three trials (estimator RMSE 624 to 839 mm), as stage 8 suggested for dead-reckoning stretches.
+4. I cannot rank table, B and C from three trials with confounded speed and start offset. Compensating the command with the inverse gain table helped in one of two comparable trials (67 against 92 mm) and made no difference in the other (56 against 53 mm); this is not enough to claim a benefit.
+5. Two of the five runs of the first batch exited silently (variants table and B printed only the header). They were rerun with stderr captured and finished normally; the cause was not identified.
+
+Consequence for the design: a route on which the marker is out of view for more than about a minute is not safe with this estimator alone. The LiDAR map (stage 10) can detect a growing mismatch only if scans are matched against it, which is not implemented.
+
+## Stage 10: LiDAR navigation through unknown obstacles and docking (MuJoCo 3.3.7)
+
+Setup: `experiments/lidar_navigation.py`, `sim/navigation.py`, `perception/lidar.py`, `perception/occupancy.py`, `control/planner.py`, `control/docking.py`. Three thin boards (0.10 x 1.70 m) are placed so that the route weaves up, down and up again (an S); the robot is not told where they are. LiDAR: 360 beams, 0.12 to 3.5 m, 5 Hz, noise 1% of the range (floor 1 cm); these numbers are from my memory of the LDS-01, not checked against the documentation, and the mount height is an assumption. The MuJoCo ray-cast scan matches an analytic box scan exactly on the boards and walls (`experiments/lidar_check.py`; the station is only approximated analytically). The robot builds a log-odds occupancy grid **from the estimated pose**, plans with A* on the inflated grid (unknown cells count as free, so it re-plans when a scan shows the path is blocked), rotates in place to the first segment, follows the rounded path with the LQR tracker, stops at a stand-off pose 0.95 m in front of the marker, aligns, and drives straight to the dock pose 0.45 m from the marker plane at 0.05 m/s. Provisional dock tolerance (to be confirmed with staff): lateral below 3 cm, along-track below 5 cm, heading below 5 degrees. Each trial starts the true robot 5 cm and 3 degrees (one standard deviation) away from the nominal start the robot believes. Collisions are counted from MuJoCo contacts between the robot and the boards, walls or station (evaluation only).
+
+Results (docked within tolerance / collisions / planning failures; 3 odometry variants):
+
+| Seeds | Status of the seeds | table | B | C |
+|---|---|---|---|---|
+| 200 to 204 | development (planner tuned on failures seen here) | 5/5, 0, 0 | 5/5, 0, 0 | 5/5, 0, 0 |
+| 300 to 305 | before the map reset (below) | 4/6, **4**, 0 | not run | 4/6, **4**, 0 |
+| 300 to 305 | after the map reset (tuned on these) | 6/6, 0, 0 | not run | 6/6, 0, 0 |
+| 400 to 407 | **fresh test**, planner as after the map reset | 7/8, 0, 1 | 8/8, 0, 0 | 7/8, 0, 1 |
+| 400 to 407 | after the margin fallback (no longer independent) | 8/8, 0, 0 | not run | 8/8, 0, 0 |
+
+Final dock errors in the successful runs: along-track at most 9 mm, lateral at most 20 mm, heading at most 3.9 degrees. The heading error was up to 6 degrees in earlier versions, where the stand-off was 0.80 m and the dock line started at the estimate instead of its projection on the dock axis. Run time 68 to 95 s, 6 to 20 plans per run. The smallest distance from the true robot centre to a board was 174 mm over all runs of the final planner (164 mm in an earlier version), which is only about 1 cm more than the half-width of the robot (about 153 mm, from the 306 mm width I recall for the Waffle Pi; not measured), so the margins are thin.
+
+What was learned and fixed (each fix was made after seeing the failure, which is why the seed sets are labelled):
+
+1. Re-plan loop: the planner relaxes the inflation near the start so a robot close to an obstacle can leave, but the blocked-path test did not, and the robot re-planned every 0.4 s without moving. Now both ignore the first 0.35 m and use the same hard radius (0.17 m); the relaxation shrinks further if the robot's own cell would otherwise be blocked.
+2. Stale map after a pose correction (the important one): with the marker out of view the position error grew to 0.4 to 0.85 m; when the marker came back the estimate jumped, but the boards were already in the grid at the wrong place, and the robot hit the end of a board in 2 of 6 trials (the other two contacts on seeds 300 to 305 were the robot touching the wall at its start, see 4). Now the grid is cleared when a marker update moves the position estimate by more than 0.10 m, and the robot re-plans. This removed all collisions on the 300 series and none occurred on the fresh 400 series.
+3. Fresh test failure: in 1 of 8 trials (both table and C, same start) no path existed at the 0.22 m margin in the narrow channel between two boards, because the map was shifted by about 0.15 m. Planning now retries with margins 0.22, 0.19 and 0.17 m. That trial then docked, but the seed set is no longer independent after this change.
+4. The nominal start (-1.75, -0.6) was too close to the west wall (the rear of the robot touches the wall at x of about -1.8); it was moved to (-1.65, -0.6). Contacts at the very start were a scenario artefact, not navigation errors.
+
+Observations and limits:
+
+- The estimator error is large between marker sightings (position RMSE 12 to 430 mm per run, maximum 754 mm in the final series, 848 mm before the map reset), yet the robot avoided the boards in all runs after fix 2, because the LiDAR sees obstacles relative to the robot. Docking depends on the marker being reacquired; the stand-off pose lies in front of the marker, where it is visible.
+- B (gains estimated online) docked in 8 of 8 fresh trials, table and C in 7 of 8. With one course and 8 trials this is not a difference I can claim; the failure of table and C was a planning-margin problem, not an estimator problem, and was fixed afterwards.
+- One course, one marker placement, the board positions known to me when tuning, a deterministic simulator and the ideal gain table calibrated in the same simulator. A different board layout is the next independent check; the 400 series is independent only with respect to the start offset and noise.
+- The robot always rotates in place before following a re-planned path; there is no obstacle avoidance while docking (the station is excluded from the map by design); no scan matching, so the map is only as good as the pose estimate.
+- The marker world pose is assumed known (it is in the scene). Docking is done with the EKF estimate, which fuses the marker measurement, rather than with a separate image-based controller on the measured marker pose.
+- LiDAR parameters, dock distance and dock tolerance are unverified assumptions; real LiDAR returns (reflectivity, the thin board edges, the robot's own mast) will behave differently.
+
 ## Open items
 
 - Confirm the robot (Burger or Waffle Pi) held by the hardware lab.
 - Camera extrinsics (mounting offset) are ignored in the stage-1 measurement models and belong to the perception stage.
 - Characterise odometry over arc motions inside the planned operating envelope, then either calibrate by speed range or absorb the residual in the EKF process noise; measure dead-reckoning error with and without calibration.
-- Add the sensors (LiDAR, camera), the room with obstacles and the ArUco marker. Encoders are already provided by the driver.
+- Test on a different board layout and with several marker placements; add scan matching so that the map does not depend on the marker; check LiDAR spec and dock tolerance with staff; hardware measurements per the Thursday checklist.

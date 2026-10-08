@@ -1,0 +1,7 @@
+MuJoCo 3.3.7 | variant table_nocomp
+trial 0 speed 0.05: tracking RMSE 900 mm (max 2210), path RMSE 155 mm, estimator 1038 mm / 74.4 deg, dock along -1766 mm lateral -1333 mm heading -102.6 deg -> outside
+trial 1 speed 0.08: tracking RMSE 92 mm (max 202), path RMSE 67 mm, estimator 83 mm / 2.9 deg, dock along -17 mm lateral -3 mm heading 0.8 deg -> OK
+trial 2 speed 0.12: tracking RMSE 53 mm (max 115), path RMSE 45 mm, estimator 57 mm / 1.3 deg, dock along -29 mm lateral 6 mm heading -0.8 deg -> OK
+
+variant table_nocomp, 3 trials: docking within tolerance 2 / 3
+tracking RMSE 349 mm (worst 900); path RMSE 89 mm; estimator position RMSE 392 mm; |dock lateral| 447 mm, |dock along| 604 mm, |dock heading| 34.7 deg

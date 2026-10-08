@@ -1,0 +1,7 @@
+MuJoCo 3.3.7 | variant single
+trial 0 speed 0.05: tracking RMSE 631 mm (max 2085), path RMSE 269 mm, estimator 839 mm / 23.4 deg, dock along -2037 mm lateral 465 mm heading 11.0 deg -> outside
+trial 1 speed 0.08: tracking RMSE 634 mm (max 2068), path RMSE 270 mm, estimator 720 mm / 20.1 deg, dock along -2037 mm lateral 373 mm heading -12.4 deg -> outside
+trial 2 speed 0.12: tracking RMSE 612 mm (max 2061), path RMSE 250 mm, estimator 624 mm / 16.4 deg, dock along -2037 mm lateral 356 mm heading -12.6 deg -> outside
+
+variant single, 3 trials: docking within tolerance 0 / 3
+tracking RMSE 626 mm (worst 634); path RMSE 263 mm; estimator position RMSE 727 mm; |dock lateral| 398 mm, |dock along| 2037 mm, |dock heading| 12.0 deg
