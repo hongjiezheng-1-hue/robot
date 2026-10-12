@@ -16,7 +16,7 @@ A TurtleBot3 with a 2D LiDAR and a camera in MuJoCo navigates a room with obstac
 | EKF with fixed odometry gains (A) and gains estimated online (B) | Done; validated on synthetic and MuJoCo data. The filters are still overconfident on MuJoCo data (see findings) |
 | LQR tracker, LiDAR obstacle avoidance (unknown S-shaped board course), docking at the marker | Working in simulation with the EKF in the loop; see findings stages 9 and 10 for the numbers and the limits (one course, provisional dock tolerance, LiDAR parameters not checked against the real sensor) |
 | Hardware | Not started (the lab was not open to external use this week) |
-| `main.py` (single-command demonstration) | Placeholder, not implemented |
+| `main.py` (single-command demonstration with video) | Done: `python main.py --model-dir robotis_mujoco_menagerie/robotis_tb3` |
 
 ## Repository layout
 
@@ -50,6 +50,14 @@ git clone --depth 1 --filter=blob:none --sparse https://github.com/ROBOTIS-GIT/r
 git -C robotis_mujoco_menagerie sparse-checkout set robotis_tb3
 ```
 
+Run the demonstration (one command, about 1.5 minutes; writes `demo_output/demo.mp4`, an overview image, the run log and a summary):
+
+```bash
+python main.py --model-dir robotis_mujoco_menagerie/robotis_tb3
+```
+
+The robot navigates an S-shaped course of three boards it does not know about, using the LiDAR, the EKF (wheel encoders and the camera marker pose) and an LQR tracker, and docks at the ArUco-marked station. Options: `--seed N` (start offset and noise), `--variant C|table|B` (odometry model), `--no-video`. The exit code is 0 when the robot docked within the provisional tolerance without touching anything. If `--model-dir` is omitted the script searches common places and the environment variable `TB3_MODEL_DIR`.
+
 Run the tests:
 
 ```bash
@@ -63,6 +71,7 @@ python experiments/ekf_synthetic.py 10
 python experiments/mujoco_ekf.py --model-dir robotis_mujoco_menagerie/robotis_tb3 --duration 240 --subpixel --run-file run.npz
 python experiments/visualize_run.py --model-dir robotis_mujoco_menagerie/robotis_tb3 --run-file run.npz --out-dir viz --subpixel
 python experiments/view_scene.py --model-dir robotis_mujoco_menagerie/robotis_tb3
+python experiments/lidar_navigation.py --model-dir robotis_mujoco_menagerie/robotis_tb3 --variant C --trials 8 --seed-base 400
 ```
 
 The last two write a video and an overview image, and open an interactive 3D viewer. The scene generator writes its files next to the robot model, and the marker texture type is picked by a test render because MuJoCo versions differ.

@@ -25,3 +25,4 @@ Thumbs.db
 # Third-party model fetched at run time by the setup notebook, and MuJoCo logs
 robotis_mujoco_menagerie/
 MUJOCO_LOG.TXT
+demo_output/

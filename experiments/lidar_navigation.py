@@ -22,11 +22,9 @@ from control.lqr_tracker import LQRTracker  # noqa: E402
 from drivers.mujoco_tb3 import MujocoTB3Driver  # noqa: E402
 from sim.mujoco_run import RunConfig, calibrate_gain_table, calibrate_gains, pick_texture_type  # noqa: E402
 from sim.navigation import navigation_metrics, run_navigation  # noqa: E402
+from sim.course import S_COURSE, START  # noqa: E402
 from sim.scene import SceneConfig, write_scene  # noqa: E402
 
-# three thin boards, staggered so that the route weaves up, down and up again (x, y, size_x, size_y)
-S_COURSE = ((-1.5, 0.65, 0.10, 1.70), (-0.5, -0.65, 0.10, 1.70), (0.5, 0.65, 0.10, 1.70))
-START = (-1.65, -0.6, 0.0)
 
 
 def main():

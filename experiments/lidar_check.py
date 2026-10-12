@@ -11,10 +11,9 @@ import numpy as np
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "experiments"))
 
 from drivers.mujoco_tb3 import MujocoTB3Driver  # noqa: E402
-from lidar_navigation import S_COURSE  # noqa: E402
+from sim.course import S_COURSE  # noqa: E402
 from perception.lidar import LidarConfig, scan_boxes, scan_mujoco  # noqa: E402
 from sim.mujoco_run import pick_texture_type  # noqa: E402
 from sim.scene import SceneConfig, write_scene  # noqa: E402

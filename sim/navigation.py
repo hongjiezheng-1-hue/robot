@@ -185,7 +185,8 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
     out.update(dt=dt, pose0=pose0, marker_world=marker_world, standoff=np.array(standoff), dock=np.array(dock),
                logodds=grid.logodds, grid_origin=np.array([grid.x0, grid.y0, grid.res]),
                scan_steps=np.array([s[0] for s in scans]), scan_poses=np.array([s[1] for s in scans]),
-               scan_ranges=np.array([s[2] for s in scans]), replan_steps=np.array([r[0] for r in replans]),
+               scan_ranges=np.array([s[2] for s in scans]), replan_steps=np.array([r[0] for r in replans]), replan_len=np.array([len(r[1]) for r in replans], dtype=int),
+               replan_xy=np.array([pt for r in replans for pt in r[1]]).reshape(-1, 2),
                failed=(MODES[out["mode"][-1]] == "failed"), n_replans=len(replans), n_steps=n_max, map_reset_steps=np.array(map_resets, dtype=int))
     return out
 

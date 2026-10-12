@@ -17,7 +17,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from estimation.models import wrap  # noqa: E402
 
-S_COURSE = ((-1.5, 0.65, 0.10, 1.70), (-0.5, -0.65, 0.10, 1.70), (0.5, 0.65, 0.10, 1.70))
+from sim.course import S_COURSE  # noqa: E402
 
 
 def main(path, out, course=S_COURSE, room=(4.0, 3.0), station_x=1.85):
