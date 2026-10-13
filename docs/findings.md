@@ -464,7 +464,7 @@ Setup: `sim/scenarios.py`, `experiments/scenario_suite.py`, `experiments/summari
 
 Rounds R2 and R3 used new seeds, but the scenarios themselves were already seen in R1, and the changes were made after looking at R1 and R2 failures, so only R1 is a clean first-run result and R2 and R3 are development results on new seeds. Seeds 800 to 805 were also used to test the changes before R3 (push 6/6, start offset 5/6), so the R3 seeds are the only ones not used for any decision.
 
-Per scenario (docked / 6, C and B, R1 / R2 / R3): all layouts except u_trap and one B run are 6/6 for C in every round (126 of 126 layouts runs). B on u_trap: 0, 2, 3 of 6. Disturbances, C: LiDAR x3 5, 4, 5; start offset x3 4, 3, 5; half frames lost 6, 6, 4; wheel radius +5 percent 6, 6, 6; push 4, 3, 6. B: 6, 6, 5; 4, 4, 4; 6, 6, 6; 6, 5, 5; 3, 3, 5.
+Per scenario (docked / 6, C and B, R1 / R2 / R3): every layout is 6/6 for C in every round (126 of 126 runs). For B, u_trap is 0, 2, 3 of 6 and s_mirrored has one failure in each of R2 and R3. Disturbances, C: LiDAR x3 5, 4, 5; start offset x3 4, 3, 5; half frames lost 6, 6, 4; wheel radius +5 percent 6, 6, 6; push 4, 3, 6. B: 6, 6, 5; 4, 4, 4; 6, 6, 6; 6, 5, 5; 3, 3, 5.
 
 Docked runs in R3: along-track at most 12 mm, lateral at most 25 mm, heading at most 4.9 degrees; closest approach to a board 154 mm (the robot half-width is about 153 mm, not measured), so contact is close in the worst case.
 
