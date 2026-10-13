@@ -48,7 +48,10 @@ def main():
     ap.add_argument("--no-video", action="store_true", help="skip the video (faster)")
     ap.add_argument("--video-step", type=int, default=2, help="draw every n-th control step (0.1 s each)")
     ap.add_argument("--fps", type=int, default=15)
+    ap.add_argument("--live", action="store_true", help="show the run live in the MuJoCo viewer (LiDAR beams, estimated pose, current plan)")
+    ap.add_argument("--speedup", type=float, default=1.0, help="with --live: simulated seconds per wall-clock second (1 = real time)")
     args = ap.parse_args()
+    sys.stdout.reconfigure(line_buffering=True)
 
     import mujoco
 
@@ -84,7 +87,17 @@ def main():
     print(f"[2/3] navigating: the robot believes it starts at {np.round(nominal, 2)}, it really starts at {np.round(start, 2)}; "
           f"stand-off {np.round(standoff[:2], 2)}, dock {np.round(dock[:2], 2)}", flush=True)
     t1 = time.time()
-    log = run_navigation(drv, scene_cfg, standoff, dock, LQRTracker(0.1), start, nominal, speed=args.speed, seed=args.seed, **models)
+    on_step, viewer = None, None
+    if args.live:
+        from sim.live_view import LiveView
+
+        live = LiveView(drv, speedup=args.speedup)
+        on_step, viewer = live.on_step, live
+    log = run_navigation(drv, scene_cfg, standoff, dock, LQRTracker(0.1), start, nominal, speed=args.speed, seed=args.seed,
+                         on_step=on_step, **models)
+    if viewer is not None and not viewer.running():
+        print("viewer closed before the run finished; stopping")
+        return 2
     m = navigation_metrics(log, scene_cfg, spec, dock)
     ok = bool(m["docked"] and not m["collided"])
 
@@ -105,7 +118,7 @@ def main():
     (out / "demo_summary.json").write_text(json.dumps(summary, indent=2, default=lambda o: o.item() if hasattr(o, "item") else str(o)))
     print(f"wrote {out / 'demo_log.npz'} and {out / 'demo_summary.json'}")
 
-    if not args.no_video and not m["failed"]:
+    if not args.no_video and not args.live and not m["failed"]:
         from sim.demo_video import render_video
 
         print("[3/3] rendering the video ...", flush=True)
@@ -116,6 +129,9 @@ def main():
                      overview_path=out / "demo_overview.png")
         print(f"wrote {out / 'demo.mp4'} and {out / 'demo_overview.png'}")
     print(f"total {time.time() - t0:.0f} s")
+    if viewer is not None:
+        print("The viewer stays open; close its window to exit.")
+        viewer.wait_until_closed()
     return 0 if ok else 1
 
 

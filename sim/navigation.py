@@ -52,7 +52,7 @@ def contact_ids(model, base_body):
 
 def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0, gain_fn=None, estimate_scales=False, compensate=True,
                    lidar_cfg=None, speed=0.10, dock_speed=0.05, inflate=0.22, hard=0.17, max_seconds=240.0, hold_seconds=10.0, max_replans=40, map_reset_jump=0.10,
-                   meas_cov=None, noise=None, subpixel=True, seed=0, wheel_radius=0.033, track_nominal=0.288, grid_kwargs=None):
+                   meas_cov=None, noise=None, subpixel=True, seed=0, wheel_radius=0.033, track_nominal=0.288, grid_kwargs=None, on_step=None):
     import mujoco
 
     from drivers.mujoco_tb3 import TICKS_PER_REV
@@ -87,6 +87,7 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
     standoff_xy = np.array(standoff[:2])
 
     mode, ref, k, waypoints, hold_left, n_done = "plan", None, 0, None, int(hold_seconds / dt), 0
+    last_ranges = None
     ticks_prev = drv.ticks()
     for step in range(n_max):
         if step % lidar_every == 0 or force_scan:
@@ -95,6 +96,7 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
             if mode not in ("dock", "hold"):
                 grid.update(ekf.pose, ranges, lidar_cfg)           # mapped at the estimated pose
             scans.append((step, ekf.pose.copy(), ranges))
+            last_ranges = ranges
             if mode == "follow" and k < len(ref["x"]) - 1:
                 rest = np.stack([ref["x"][k::3], ref["y"][k::3]], axis=1)
                 if len(rest) >= 2 and path_blocked(grid, [tuple(p) for p in rest], hard):
@@ -176,6 +178,9 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
         log["truth"][step] = drv.true_pose()                       # logged for evaluation only
         log["est_pose"][step], log["est_cov"][step], log["wheel_omega"][step] = ekf.pose, ekf.pose_cov.ravel(), omega
         log["cmd"][step], log["mode"][step], log["contact"][step] = (v, w), MODES.index(mode), hit
+        if on_step is not None and on_step(dict(step=step, dt=dt, mode=mode, est=ekf.pose.copy(), ranges=last_ranges, plan=waypoints)):
+            n_max = step + 1                                       # the caller asked to stop (for example the viewer was closed)
+            break
         if mode == "hold" and hold_left <= 0:
             n_max = step + 1
             break

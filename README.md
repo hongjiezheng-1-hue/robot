@@ -56,7 +56,7 @@ Run the demonstration (one command, about 1.5 minutes; writes `demo_output/demo.
 python main.py --model-dir robotis_mujoco_menagerie/robotis_tb3
 ```
 
-The robot navigates an S-shaped course of three boards it does not know about, using the LiDAR, the EKF (wheel encoders and the camera marker pose) and an LQR tracker, and docks at the ArUco-marked station. Options: `--seed N` (start offset and noise), `--variant C|table|B` (odometry model), `--no-video`. The exit code is 0 when the robot docked within the provisional tolerance without touching anything. If `--model-dir` is omitted the script searches common places and the environment variable `TB3_MODEL_DIR`.
+The robot navigates an S-shaped course of three boards it does not know about, using the LiDAR, the EKF (wheel encoders and the camera marker pose) and an LQR tracker, and docks at the ArUco-marked station. Options: `--seed N` (start offset and noise), `--variant C|table|B` (odometry model), `--no-video`, and `--live` to watch the run in the MuJoCo viewer in real time (cyan: LiDAR beams, red: estimated pose, purple: current plan; the window stays open until closed). The exit code is 0 when the robot docked within the provisional tolerance without touching anything. If `--model-dir` is omitted the script searches common places and the environment variable `TB3_MODEL_DIR`.
 
 Run the tests:
 
