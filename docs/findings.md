@@ -452,6 +452,32 @@ Observations and limits:
 - The marker world pose is assumed known (it is in the scene). Docking is done with the EKF estimate, which fuses the marker measurement, rather than with a separate image-based controller on the measured marker pose.
 - LiDAR parameters, dock distance and dock tolerance are unverified assumptions; real LiDAR returns (reflectivity, the thin board edges, the robot's own mast) will behave differently.
 
+## Stage 11: more layouts and disturbances (MuJoCo 3.3.7)
+
+Setup: `sim/scenarios.py`, `experiments/scenario_suite.py`, `experiments/summarise_scenarios.py`, raw results in `results/scenarios/`. Seven layouts (the S course, its mirror image, a gate with a 0.7 m gap, five scattered boxes, a U-shaped pocket on the straight line to the goal, a station on the north wall, an empty room) with 6 start offsets and noise seeds each, and five disturbances on the S course (LiDAR noise x3, start offset x3 = 15 cm and 9 degrees, half of the camera frames lost, believed wheel radius 5 percent too large, a lateral push of 30 N for 0.15 s at t = 20 s that the encoders cannot see), 6 seeds each. Variants C and B. The layouts were written down before the first run and only checked for solvability with a known map (`experiments/scenario_feasibility.py`); none was changed afterwards. Outcome per run: docked in tolerance without contact, collision, no path, or not docked.
+
+| Round | What changed before it | Seeds | C layouts | C disturbances | B layouts | B disturbances |
+|---|---|---|---|---|---|---|
+| R1 | nothing (planner frozen) | 500 to 505, 600 to 605 | 42/42 | 25/30 | 36/42 | 25/30 |
+| R2 | map reset and re-plan when no path is found or plans thrash | 700 to 705, 800 to 805 | 42/42 | 22/30 | 37/42 | 24/30 |
+| R3 | marker search, footprint clearing, goal relaxation (below) | 900 to 905, 1000 to 1005 | 42/42 | 26/30 | 38/42 | 25/30 |
+
+Rounds R2 and R3 used new seeds, but the scenarios themselves were already seen in R1, and the changes were made after looking at R1 and R2 failures, so only R1 is a clean first-run result and R2 and R3 are development results on new seeds. Seeds 800 to 805 were also used to test the changes before R3 (push 6/6, start offset 5/6), so the R3 seeds are the only ones not used for any decision.
+
+Per scenario (docked / 6, C and B, R1 / R2 / R3): all layouts except u_trap and one B run are 6/6 for C in every round (126 of 126 layouts runs). B on u_trap: 0, 2, 3 of 6. Disturbances, C: LiDAR x3 5, 4, 5; start offset x3 4, 3, 5; half frames lost 6, 6, 4; wheel radius +5 percent 6, 6, 6; push 4, 3, 6. B: 6, 6, 5; 4, 4, 4; 6, 6, 6; 6, 5, 5; 3, 3, 5.
+
+Docked runs in R3: along-track at most 12 mm, lateral at most 25 mm, heading at most 4.9 degrees; closest approach to a board 154 mm (the robot half-width is about 153 mm, not measured), so contact is close in the worst case.
+
+Findings and the changes made:
+
+1. **In-place rotation with variant B.** B starts with both gains at 1 and only learns them while moving, but in place the real yaw gain is about 0.72; a large first turn then smears the first scans into the map and no path is found (u_trap, a 53 degree first turn: 0 of 6). Variants with the gain table (table, C) do not have this problem in the layouts used. B is therefore not suitable as the default.
+2. **A wrong pose makes the goal unreachable (the main weakness).** After a large start offset or a push, the estimated pose and so the whole map are shifted; the stand-off pose, defined in the world frame, then falls inside a mapped board and no path exists. Changes: (a) the planner now starts from inside a conflicting map (the cells under the robot are cleared), (b) a blocked goal is replaced by the nearest free cell within 0.8 m (the robot gets closer, sees the marker and the pose is corrected), (c) a recovery that turns towards the marker for up to 10 s before the map is cleared. On development seeds this took the push case from 3/6 to 6/6 and the start offset case from 3/6 to 5/6; on R3 seeds 6/6 and 5/6.
+3. **Remaining failures (R3, C): four collisions.** LiDAR noise x3 (1 of 6), start offset x3 (1 of 6, in contact at 0 s because the 15 cm offset places the robot against the wall, then lost with 0.66 m estimator error) and half of the camera frames lost (2 of 6, estimator error 0.2 and 1.0 m). With the marker unavailable for long stretches the pose estimate drifts and the map is built on it; there is no scan matching against the known room walls, which is the missing piece.
+4. The marker-jump map reset covers position jumps only; a heading correction of 20 degrees without a position jump is not detected.
+5. Two parallel runs crashed once because they rewrote the marker texture at the same time; scene files are now written atomically and only when they change.
+
+Limits: simulation only, one robot model, MuJoCo 3.3.7, 6 seeds per cell (a cell of 6/6 does not show a rate above about 60 percent with 95 percent confidence). The layouts are mine; nothing was tested on a layout drawn by someone else.
+
 ## Open items
 
 - Confirm the robot (Burger or Waffle Pi) held by the hardware lab.

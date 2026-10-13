@@ -1,0 +1,33 @@
+MuJoCo 3.3.7 | variant C
+s_course       lidar_x3   seed 1000: docked     73 s, 11 plans, 0 recoveries, clearance 183 mm, est RMSE 86 mm, dock 1/-2 mm 0.6 deg
+s_course       lidar_x3   seed 1001: collision  74 s, 7 plans, 0 recoveries, clearance 129 mm, est RMSE 111 mm, dock 12/-26 mm 5.4 deg
+s_course       lidar_x3   seed 1002: docked     75 s, 10 plans, 0 recoveries, clearance 177 mm, est RMSE 69 mm, dock 1/-8 mm 1.7 deg
+s_course       lidar_x3   seed 1003: docked     73 s, 7 plans, 0 recoveries, clearance 177 mm, est RMSE 63 mm, dock 4/-1 mm 0.4 deg
+s_course       lidar_x3   seed 1004: docked     72 s, 9 plans, 0 recoveries, clearance 179 mm, est RMSE 37 mm, dock 2/-3 mm 0.8 deg
+s_course       lidar_x3   seed 1005: docked     72 s, 8 plans, 0 recoveries, clearance 164 mm, est RMSE 37 mm, dock 2/-0 mm 0.2 deg
+s_course       start_x3   seed 1000: docked     76 s, 15 plans, 0 recoveries, clearance 208 mm, est RMSE 260 mm, dock 4/-16 mm 3.4 deg
+s_course       start_x3   seed 1001: docked     71 s, 6 plans, 0 recoveries, clearance 166 mm, est RMSE 212 mm, dock 5/1 mm -0.1 deg
+s_course       start_x3   seed 1002: docked     76 s, 12 plans, 0 recoveries, clearance 200 mm, est RMSE 168 mm, dock 3/-15 mm 3.0 deg
+s_course       start_x3   seed 1003: collision  66 s, 4 plans, 0 recoveries, clearance 209 mm, est RMSE 658 mm, dock -112/-985 mm -19.4 deg
+s_course       start_x3   seed 1004: docked     74 s, 10 plans, 0 recoveries, clearance 186 mm, est RMSE 44 mm, dock 4/-1 mm 0.4 deg
+s_course       start_x3   seed 1005: docked     72 s, 8 plans, 0 recoveries, clearance 214 mm, est RMSE 93 mm, dock 4/3 mm -0.5 deg
+s_course       dropout50  seed 1000: docked     72 s, 12 plans, 0 recoveries, clearance 222 mm, est RMSE 83 mm, dock 3/-5 mm 1.2 deg
+s_course       dropout50  seed 1001: docked     76 s, 9 plans, 0 recoveries, clearance 206 mm, est RMSE 83 mm, dock 2/1 mm -0.0 deg
+s_course       dropout50  seed 1002: docked     73 s, 10 plans, 0 recoveries, clearance 215 mm, est RMSE 65 mm, dock 2/-1 mm 0.3 deg
+s_course       dropout50  seed 1003: collision  68 s, 7 plans, 0 recoveries, clearance 134 mm, est RMSE 211 mm, dock -340/172 mm 49.3 deg
+s_course       dropout50  seed 1004: collision  72 s, 13 plans, 0 recoveries, clearance 87 mm, est RMSE 1027 mm, dock -1788/262 mm -102.7 deg
+s_course       dropout50  seed 1005: docked     72 s, 9 plans, 0 recoveries, clearance 206 mm, est RMSE 24 mm, dock 4/-4 mm 0.9 deg
+s_course       radius+5   seed 1000: docked     78 s, 12 plans, 0 recoveries, clearance 191 mm, est RMSE 107 mm, dock -1/-8 mm 1.8 deg
+s_course       radius+5   seed 1001: docked     77 s, 10 plans, 0 recoveries, clearance 177 mm, est RMSE 86 mm, dock -2/-0 mm 0.2 deg
+s_course       radius+5   seed 1002: docked     80 s, 12 plans, 0 recoveries, clearance 171 mm, est RMSE 72 mm, dock 0/-5 mm 1.1 deg
+s_course       radius+5   seed 1003: docked     70 s, 7 plans, 0 recoveries, clearance 175 mm, est RMSE 95 mm, dock -2/-4 mm 0.9 deg
+s_course       radius+5   seed 1004: docked     76 s, 10 plans, 0 recoveries, clearance 161 mm, est RMSE 37 mm, dock -0/-3 mm 0.7 deg
+s_course       radius+5   seed 1005: docked     75 s, 10 plans, 0 recoveries, clearance 215 mm, est RMSE 65 mm, dock -3/-5 mm 1.2 deg
+s_course       push       seed 1000: docked     77 s, 11 plans, 0 recoveries, clearance 236 mm, est RMSE 208 mm, dock 0/2 mm -0.2 deg
+s_course       push       seed 1001: docked     80 s, 9 plans, 0 recoveries, clearance 210 mm, est RMSE 78 mm, dock 3/3 mm -0.5 deg
+s_course       push       seed 1002: docked     75 s, 10 plans, 0 recoveries, clearance 231 mm, est RMSE 218 mm, dock 3/-7 mm 1.4 deg
+s_course       push       seed 1003: docked     75 s, 7 plans, 0 recoveries, clearance 202 mm, est RMSE 119 mm, dock 4/-1 mm 0.4 deg
+s_course       push       seed 1004: docked     77 s, 10 plans, 0 recoveries, clearance 213 mm, est RMSE 167 mm, dock 1/-1 mm 0.4 deg
+s_course       push       seed 1005: docked     78 s, 10 plans, 0 recoveries, clearance 227 mm, est RMSE 148 mm, dock 1/-2 mm 0.6 deg
+
+total 30 runs: docked 26, collision 4, no_path 0, not_docked 0

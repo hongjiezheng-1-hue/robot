@@ -1,0 +1,33 @@
+MuJoCo 3.3.7 | variant B
+s_course       lidar_x3   seed 1000: not_docked 87 s, 19 plans, 0 recoveries, clearance 212 mm, est RMSE 168 mm, dock 7/-43 mm 8.8 deg
+s_course       lidar_x3   seed 1001: docked     87 s, 15 plans, 0 recoveries, clearance 195 mm, est RMSE 316 mm, dock -5/-7 mm 1.5 deg
+s_course       lidar_x3   seed 1002: docked     90 s, 18 plans, 0 recoveries, clearance 178 mm, est RMSE 226 mm, dock -5/-10 mm 2.1 deg
+s_course       lidar_x3   seed 1003: docked     83 s, 13 plans, 0 recoveries, clearance 210 mm, est RMSE 283 mm, dock -6/-16 mm 3.4 deg
+s_course       lidar_x3   seed 1004: docked     89 s, 19 plans, 0 recoveries, clearance 162 mm, est RMSE 176 mm, dock -6/-6 mm 1.4 deg
+s_course       lidar_x3   seed 1005: docked     89 s, 17 plans, 0 recoveries, clearance 207 mm, est RMSE 228 mm, dock -8/-3 mm 0.7 deg
+s_course       start_x3   seed 1000: collision  69 s, 17 plans, 0 recoveries, clearance 87 mm, est RMSE 663 mm, dock -1037/475 mm 12.6 deg
+s_course       start_x3   seed 1001: docked     81 s, 12 plans, 0 recoveries, clearance 193 mm, est RMSE 481 mm, dock -7/-13 mm 2.7 deg
+s_course       start_x3   seed 1002: docked     87 s, 17 plans, 0 recoveries, clearance 160 mm, est RMSE 269 mm, dock -6/-25 mm 4.9 deg
+s_course       start_x3   seed 1003: collision  85 s, 11 plans, 0 recoveries, clearance 201 mm, est RMSE 394 mm, dock -7/-3 mm 0.8 deg
+s_course       start_x3   seed 1004: docked     85 s, 15 plans, 0 recoveries, clearance 198 mm, est RMSE 169 mm, dock -6/-11 mm 2.3 deg
+s_course       start_x3   seed 1005: docked     84 s, 13 plans, 0 recoveries, clearance 190 mm, est RMSE 343 mm, dock -4/-16 mm 3.3 deg
+s_course       dropout50  seed 1000: docked     88 s, 17 plans, 0 recoveries, clearance 181 mm, est RMSE 165 mm, dock -5/-22 mm 4.2 deg
+s_course       dropout50  seed 1001: docked     88 s, 14 plans, 0 recoveries, clearance 193 mm, est RMSE 308 mm, dock -5/-7 mm 1.6 deg
+s_course       dropout50  seed 1002: docked     91 s, 16 plans, 0 recoveries, clearance 202 mm, est RMSE 240 mm, dock -8/-11 mm 2.3 deg
+s_course       dropout50  seed 1003: docked     83 s, 13 plans, 0 recoveries, clearance 205 mm, est RMSE 296 mm, dock -6/-16 mm 3.3 deg
+s_course       dropout50  seed 1004: docked     84 s, 15 plans, 0 recoveries, clearance 210 mm, est RMSE 163 mm, dock -7/-4 mm 0.8 deg
+s_course       dropout50  seed 1005: docked     87 s, 14 plans, 0 recoveries, clearance 181 mm, est RMSE 240 mm, dock -5/-2 mm 0.5 deg
+s_course       radius+5   seed 1000: docked     91 s, 18 plans, 0 recoveries, clearance 191 mm, est RMSE 213 mm, dock -12/-20 mm 3.9 deg
+s_course       radius+5   seed 1001: collision  95 s, 19 plans, 0 recoveries, clearance 134 mm, est RMSE 465 mm, dock -716/-186 mm 109.4 deg
+s_course       radius+5   seed 1002: docked     93 s, 18 plans, 0 recoveries, clearance 172 mm, est RMSE 282 mm, dock -12/-7 mm 1.6 deg
+s_course       radius+5   seed 1003: docked     88 s, 16 plans, 0 recoveries, clearance 214 mm, est RMSE 359 mm, dock -10/-17 mm 3.4 deg
+s_course       radius+5   seed 1004: docked     92 s, 20 plans, 0 recoveries, clearance 198 mm, est RMSE 227 mm, dock -9/-9 mm 1.9 deg
+s_course       radius+5   seed 1005: docked     93 s, 17 plans, 0 recoveries, clearance 181 mm, est RMSE 289 mm, dock -10/5 mm -0.8 deg
+s_course       push       seed 1000: docked     123 s, 23 plans, 1 recoveries, clearance 174 mm, est RMSE 341 mm, dock -7/-19 mm 3.7 deg
+s_course       push       seed 1001: docked     98 s, 16 plans, 0 recoveries, clearance 211 mm, est RMSE 189 mm, dock -7/-8 mm 1.7 deg
+s_course       push       seed 1002: docked     91 s, 16 plans, 0 recoveries, clearance 200 mm, est RMSE 191 mm, dock -6/-20 mm 3.9 deg
+s_course       push       seed 1003: docked     95 s, 15 plans, 0 recoveries, clearance 213 mm, est RMSE 165 mm, dock -6/-6 mm 1.3 deg
+s_course       push       seed 1004: not_docked 90 s, 16 plans, 0 recoveries, clearance 211 mm, est RMSE 240 mm, dock -0/-37 mm 7.1 deg
+s_course       push       seed 1005: docked     93 s, 19 plans, 0 recoveries, clearance 154 mm, est RMSE 164 mm, dock -6/-15 mm 3.0 deg
+
+total 30 runs: docked 25, collision 3, no_path 0, not_docked 2

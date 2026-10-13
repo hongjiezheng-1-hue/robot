@@ -1,0 +1,21 @@
+MuJoCo 3.3.7 | variant B
+u_trap         none       seed 900: no_path    64 s, 10 plans, 3 recoveries, clearance -, est RMSE -, dock -
+u_trap         none       seed 901: docked     134 s, 30 plans, 0 recoveries, clearance 217 mm, est RMSE 103 mm, dock -5/-4 mm 0.9 deg
+u_trap         none       seed 902: no_path    86 s, 18 plans, 3 recoveries, clearance -, est RMSE -, dock -
+u_trap         none       seed 903: no_path    106 s, 25 plans, 3 recoveries, clearance -, est RMSE -, dock -
+u_trap         none       seed 904: docked     183 s, 38 plans, 3 recoveries, clearance 216 mm, est RMSE 102 mm, dock -6/15 mm -2.7 deg
+u_trap         none       seed 905: docked     132 s, 22 plans, 2 recoveries, clearance 207 mm, est RMSE 204 mm, dock -6/0 mm 0.1 deg
+north_station  none       seed 900: docked     56 s, 3 plans, 0 recoveries, clearance 228 mm, est RMSE 82 mm, dock -6/13 mm -2.3 deg
+north_station  none       seed 901: docked     57 s, 3 plans, 0 recoveries, clearance 260 mm, est RMSE 112 mm, dock -4/14 mm -2.5 deg
+north_station  none       seed 902: docked     55 s, 3 plans, 0 recoveries, clearance 212 mm, est RMSE 77 mm, dock -7/12 mm -2.2 deg
+north_station  none       seed 903: docked     56 s, 3 plans, 0 recoveries, clearance 248 mm, est RMSE 78 mm, dock -6/13 mm -2.4 deg
+north_station  none       seed 904: docked     56 s, 3 plans, 0 recoveries, clearance 195 mm, est RMSE 101 mm, dock -7/16 mm -2.8 deg
+north_station  none       seed 905: docked     57 s, 4 plans, 0 recoveries, clearance 232 mm, est RMSE 116 mm, dock -7/14 mm -2.5 deg
+empty          none       seed 900: docked     52 s, 1 plans, 0 recoveries, clearance 347 mm, est RMSE 41 mm, dock -5/-1 mm 0.3 deg
+empty          none       seed 901: docked     53 s, 1 plans, 0 recoveries, clearance 304 mm, est RMSE 30 mm, dock -9/0 mm 0.0 deg
+empty          none       seed 902: docked     51 s, 1 plans, 0 recoveries, clearance 362 mm, est RMSE 24 mm, dock -9/2 mm -0.2 deg
+empty          none       seed 903: docked     52 s, 1 plans, 0 recoveries, clearance 352 mm, est RMSE 28 mm, dock -8/3 mm -0.4 deg
+empty          none       seed 904: docked     53 s, 1 plans, 0 recoveries, clearance 299 mm, est RMSE 27 mm, dock -7/2 mm -0.3 deg
+empty          none       seed 905: docked     52 s, 1 plans, 0 recoveries, clearance 286 mm, est RMSE 29 mm, dock -4/3 mm -0.4 deg
+
+total 18 runs: docked 15, collision 0, no_path 3, not_docked 0
