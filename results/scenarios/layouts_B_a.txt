@@ -1,0 +1,27 @@
+MuJoCo 3.3.7 | variant B
+s_course       none       seed 500: docked     84 s, 15 plans, clearance 219 mm, est RMSE 291 mm, dock -8/-12 mm 2.5 deg
+s_course       none       seed 501: docked     90 s, 16 plans, clearance 227 mm, est RMSE 167 mm, dock -6/-4 mm 0.9 deg
+s_course       none       seed 502: docked     88 s, 17 plans, clearance 175 mm, est RMSE 239 mm, dock -6/-3 mm 0.8 deg
+s_course       none       seed 503: docked     85 s, 14 plans, clearance 198 mm, est RMSE 380 mm, dock -5/-17 mm 3.4 deg
+s_course       none       seed 504: docked     91 s, 17 plans, clearance 191 mm, est RMSE 141 mm, dock -4/-8 mm 1.7 deg
+s_course       none       seed 505: docked     87 s, 15 plans, clearance 208 mm, est RMSE 279 mm, dock -8/-10 mm 2.2 deg
+s_mirrored     none       seed 500: docked     86 s, 14 plans, clearance 190 mm, est RMSE 218 mm, dock -4/14 mm -2.6 deg
+s_mirrored     none       seed 501: docked     85 s, 13 plans, clearance 229 mm, est RMSE 203 mm, dock -5/17 mm -3.1 deg
+s_mirrored     none       seed 502: docked     85 s, 14 plans, clearance 201 mm, est RMSE 176 mm, dock -5/15 mm -2.8 deg
+s_mirrored     none       seed 503: docked     86 s, 16 plans, clearance 224 mm, est RMSE 95 mm, dock -7/13 mm -2.4 deg
+s_mirrored     none       seed 504: docked     84 s, 11 plans, clearance 218 mm, est RMSE 305 mm, dock -7/16 mm -2.9 deg
+s_mirrored     none       seed 505: docked     90 s, 15 plans, clearance 206 mm, est RMSE 237 mm, dock -3/20 mm -3.8 deg
+gate           none       seed 500: docked     56 s, 4 plans, clearance 277 mm, est RMSE 32 mm, dock -9/6 mm -0.9 deg
+gate           none       seed 501: docked     56 s, 4 plans, clearance 236 mm, est RMSE 49 mm, dock -9/6 mm -1.0 deg
+gate           none       seed 502: docked     56 s, 5 plans, clearance 250 mm, est RMSE 34 mm, dock -9/6 mm -1.0 deg
+gate           none       seed 503: docked     56 s, 4 plans, clearance 255 mm, est RMSE 52 mm, dock -5/3 mm -0.4 deg
+gate           none       seed 504: docked     57 s, 5 plans, clearance 240 mm, est RMSE 45 mm, dock -4/5 mm -0.7 deg
+gate           none       seed 505: docked     56 s, 5 plans, clearance 260 mm, est RMSE 47 mm, dock -8/4 mm -0.6 deg
+scattered      none       seed 500: docked     49 s, 1 plans, clearance 300 mm, est RMSE 26 mm, dock -7/3 mm -0.4 deg
+scattered      none       seed 501: docked     50 s, 1 plans, clearance 284 mm, est RMSE 21 mm, dock -7/5 mm -0.9 deg
+scattered      none       seed 502: docked     49 s, 1 plans, clearance 296 mm, est RMSE 16 mm, dock -8/5 mm -0.7 deg
+scattered      none       seed 503: docked     50 s, 1 plans, clearance 250 mm, est RMSE 40 mm, dock -8/3 mm -0.4 deg
+scattered      none       seed 504: docked     50 s, 1 plans, clearance 240 mm, est RMSE 27 mm, dock -5/-1 mm 0.4 deg
+scattered      none       seed 505: docked     49 s, 1 plans, clearance 288 mm, est RMSE 39 mm, dock -8/2 mm -0.2 deg
+
+total 24 runs: docked 24, collision 0, no_path 0, not_docked 0

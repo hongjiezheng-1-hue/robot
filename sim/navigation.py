@@ -52,7 +52,7 @@ def contact_ids(model, base_body):
 
 def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0, gain_fn=None, estimate_scales=False, compensate=True,
                    lidar_cfg=None, speed=0.10, dock_speed=0.05, inflate=0.22, hard=0.17, max_seconds=240.0, hold_seconds=10.0, max_replans=40, map_reset_jump=0.10,
-                   meas_cov=None, noise=None, subpixel=True, seed=0, wheel_radius=0.033, track_nominal=0.288, grid_kwargs=None, on_step=None):
+                   meas_cov=None, noise=None, subpixel=True, seed=0, wheel_radius=0.033, track_nominal=0.288, grid_kwargs=None, on_step=None, marker_dropout=0.0, push=None):
     import mujoco
 
     from drivers.mujoco_tb3 import TICKS_PER_REV
@@ -75,6 +75,7 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
     ekf = MarkerEKF(np.asarray(belief0, dtype=float), P0_START, marker_world, wheel_radius, track_nominal,
                     estimate_scales=estimate_scales, gain_fn=gain_fn, meas_cov=meas_cov, noise=noise)
     rng = np.random.default_rng(seed)
+    drop_rng = np.random.default_rng(seed + 12345)
     grid = OccupancyGrid(**(grid_kwargs or {}))
 
     n_max = int(round(max_seconds / dt))
@@ -151,18 +152,24 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
         vn, wn = to_nominal(v, w, gain_fn if compensate else None)
         wl, wr = wheel_speeds(vn, wn, wheel_radius, track_nominal)
         hit = False
+        pushing = bool(push) and push["time"] <= step * dt < push["time"] + push["duration"]
+        if pushing:                                                # disturbance: a lateral force the encoders cannot see
+            c_, s_ = np.cos(drv.true_pose()[2]), np.sin(drv.true_pose()[2])
+            drv.data.xfrc_applied[base_id, :2] = push["force"] * np.array([-s_, c_])
         for _ in range(sub):
             drv.step(wl, wr)
             for c in drv.data.contact[:drv.data.ncon]:
                 if (c.geom1 in robot_geoms and c.geom2 in env_geoms) or (c.geom2 in robot_geoms and c.geom1 in env_geoms):
                     hit = True
+        if pushing:
+            drv.data.xfrc_applied[base_id, :] = 0.0
         ticks = drv.ticks()
         omega = (ticks - ticks_prev) * (2 * np.pi / TICKS_PER_REV) / dt
         ticks_prev = ticks
         ekf.predict(omega[0], omega[1], dt)
         renderer.update_scene(drv.data, camera=scene_cfg.camera_name)
         ids, corners = detect_markers(renderer.render(), scene_cfg.marker_dictionary, subpixel=subpixel)
-        if ids is not None and scene_cfg.marker_id in ids.flatten():
+        if ids is not None and scene_cfg.marker_id in ids.flatten() and drop_rng.random() >= marker_dropout:
             c = corners[list(ids.flatten()).index(scene_cfg.marker_id)].reshape(4, 2)
             z = estimate_marker_pose(c, K, scene_cfg.marker_size, scene_cfg.camera_pos)
             if z is not None:

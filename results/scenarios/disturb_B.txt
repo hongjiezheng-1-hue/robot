@@ -1,0 +1,33 @@
+MuJoCo 3.3.7 | variant B
+s_course       lidar_x3   seed 600: docked     93 s, 17 plans, clearance 225 mm, est RMSE 292 mm, dock -6/-12 mm 2.6 deg
+s_course       lidar_x3   seed 601: docked     92 s, 17 plans, clearance 225 mm, est RMSE 231 mm, dock -9/-9 mm 2.0 deg
+s_course       lidar_x3   seed 602: docked     91 s, 17 plans, clearance 219 mm, est RMSE 318 mm, dock -8/-5 mm 1.1 deg
+s_course       lidar_x3   seed 603: docked     87 s, 17 plans, clearance 209 mm, est RMSE 178 mm, dock -6/-7 mm 1.5 deg
+s_course       lidar_x3   seed 604: docked     92 s, 17 plans, clearance 199 mm, est RMSE 177 mm, dock -8/-4 mm 1.0 deg
+s_course       lidar_x3   seed 605: docked     82 s, 15 plans, clearance 190 mm, est RMSE 303 mm, dock -5/-11 mm 2.4 deg
+s_course       start_x3   seed 600: docked     86 s, 14 plans, clearance 198 mm, est RMSE 304 mm, dock -6/-7 mm 1.6 deg
+s_course       start_x3   seed 601: docked     89 s, 17 plans, clearance 211 mm, est RMSE 215 mm, dock -7/-13 mm 2.5 deg
+s_course       start_x3   seed 602: docked     87 s, 13 plans, clearance 212 mm, est RMSE 464 mm, dock -7/-13 mm 2.5 deg
+s_course       start_x3   seed 603: collision  86 s, 16 plans, clearance 203 mm, est RMSE 272 mm, dock -7/-8 mm 1.6 deg
+s_course       start_x3   seed 604: no_path    116 s, 40 plans, clearance -, est RMSE -, dock -
+s_course       start_x3   seed 605: docked     92 s, 14 plans, clearance 207 mm, est RMSE 623 mm, dock -7/-7 mm 1.5 deg
+s_course       dropout50  seed 600: docked     93 s, 15 plans, clearance 170 mm, est RMSE 267 mm, dock -5/3 mm -0.5 deg
+s_course       dropout50  seed 601: docked     88 s, 18 plans, clearance 214 mm, est RMSE 207 mm, dock -6/-13 mm 2.7 deg
+s_course       dropout50  seed 602: docked     92 s, 16 plans, clearance 222 mm, est RMSE 324 mm, dock -4/-13 mm 2.8 deg
+s_course       dropout50  seed 603: docked     94 s, 18 plans, clearance 183 mm, est RMSE 193 mm, dock -6/-5 mm 1.1 deg
+s_course       dropout50  seed 604: docked     90 s, 16 plans, clearance 218 mm, est RMSE 165 mm, dock -7/-5 mm 1.1 deg
+s_course       dropout50  seed 605: docked     91 s, 16 plans, clearance 167 mm, est RMSE 342 mm, dock -8/-12 mm 2.4 deg
+s_course       radius+5   seed 600: docked     91 s, 18 plans, clearance 186 mm, est RMSE 306 mm, dock -14/-6 mm 1.2 deg
+s_course       radius+5   seed 601: docked     105 s, 22 plans, clearance 197 mm, est RMSE 283 mm, dock -12/-8 mm 1.6 deg
+s_course       radius+5   seed 602: docked     87 s, 14 plans, clearance 224 mm, est RMSE 341 mm, dock -9/-15 mm 3.1 deg
+s_course       radius+5   seed 603: docked     90 s, 16 plans, clearance 237 mm, est RMSE 257 mm, dock -9/-19 mm 3.9 deg
+s_course       radius+5   seed 604: docked     92 s, 16 plans, clearance 187 mm, est RMSE 208 mm, dock -13/-8 mm 1.6 deg
+s_course       radius+5   seed 605: docked     82 s, 15 plans, clearance 157 mm, est RMSE 415 mm, dock -10/-19 mm 3.9 deg
+s_course       push       seed 600: docked     91 s, 17 plans, clearance 220 mm, est RMSE 159 mm, dock -2/-21 mm 4.2 deg
+s_course       push       seed 601: no_path    43 s, 13 plans, clearance -, est RMSE -, dock -
+s_course       push       seed 602: docked     93 s, 15 plans, clearance 237 mm, est RMSE 188 mm, dock -5/-5 mm 1.1 deg
+s_course       push       seed 603: no_path    40 s, 40 plans, clearance -, est RMSE -, dock -
+s_course       push       seed 604: no_path    22 s, 5 plans, clearance -, est RMSE -, dock -
+s_course       push       seed 605: docked     93 s, 15 plans, clearance 214 mm, est RMSE 212 mm, dock -5/-7 mm 1.5 deg
+
+total 30 runs: docked 25, collision 1, no_path 4, not_docked 0

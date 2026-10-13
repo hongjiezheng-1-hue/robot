@@ -1,0 +1,21 @@
+MuJoCo 3.3.7 | variant B
+u_trap         none       seed 500: no_path    8 s, 2 plans, clearance -, est RMSE -, dock -
+u_trap         none       seed 501: no_path    8 s, 2 plans, clearance -, est RMSE -, dock -
+u_trap         none       seed 502: no_path    51 s, 14 plans, clearance -, est RMSE -, dock -
+u_trap         none       seed 503: no_path    36 s, 13 plans, clearance -, est RMSE -, dock -
+u_trap         none       seed 504: no_path    8 s, 2 plans, clearance -, est RMSE -, dock -
+u_trap         none       seed 505: no_path    8 s, 2 plans, clearance -, est RMSE -, dock -
+north_station  none       seed 500: docked     56 s, 3 plans, clearance 240 mm, est RMSE 79 mm, dock -6/12 mm -2.1 deg
+north_station  none       seed 501: docked     56 s, 3 plans, clearance 212 mm, est RMSE 104 mm, dock -6/15 mm -2.7 deg
+north_station  none       seed 502: docked     56 s, 3 plans, clearance 239 mm, est RMSE 76 mm, dock -8/14 mm -2.4 deg
+north_station  none       seed 503: docked     57 s, 3 plans, clearance 246 mm, est RMSE 148 mm, dock -4/12 mm -2.1 deg
+north_station  none       seed 504: docked     56 s, 3 plans, clearance 203 mm, est RMSE 86 mm, dock -4/12 mm -2.2 deg
+north_station  none       seed 505: docked     55 s, 3 plans, clearance 262 mm, est RMSE 62 mm, dock -8/11 mm -1.9 deg
+empty          none       seed 500: docked     52 s, 1 plans, clearance 384 mm, est RMSE 34 mm, dock -6/0 mm 0.1 deg
+empty          none       seed 501: docked     53 s, 1 plans, clearance 294 mm, est RMSE 27 mm, dock -5/3 mm -0.4 deg
+empty          none       seed 502: docked     52 s, 1 plans, clearance 355 mm, est RMSE 27 mm, dock -7/2 mm -0.2 deg
+empty          none       seed 503: docked     52 s, 1 plans, clearance 363 mm, est RMSE 52 mm, dock -9/-2 mm 0.5 deg
+empty          none       seed 504: docked     51 s, 1 plans, clearance 346 mm, est RMSE 35 mm, dock -8/-0 mm 0.2 deg
+empty          none       seed 505: docked     52 s, 1 plans, clearance 413 mm, est RMSE 47 mm, dock -4/-1 mm 0.3 deg
+
+total 18 runs: docked 12, collision 0, no_path 6, not_docked 0
