@@ -1,0 +1,21 @@
+MuJoCo 3.3.7 | variant B
+u_trap         none       seed 700: no_path    83 s, 28 plans, 3 recoveries, clearance -, est RMSE -, dock -
+u_trap         none       seed 701: no_path    60 s, 17 plans, 3 recoveries, clearance -, est RMSE -, dock -
+u_trap         none       seed 702: docked     133 s, 31 plans, 3 recoveries, clearance 203 mm, est RMSE 142 mm, dock -5/-12 mm 2.5 deg
+u_trap         none       seed 703: no_path    74 s, 20 plans, 3 recoveries, clearance -, est RMSE -, dock -
+u_trap         none       seed 704: docked     119 s, 23 plans, 0 recoveries, clearance 201 mm, est RMSE 117 mm, dock -6/-8 mm 1.8 deg
+u_trap         none       seed 705: no_path    48 s, 16 plans, 3 recoveries, clearance -, est RMSE -, dock -
+north_station  none       seed 700: docked     56 s, 3 plans, 0 recoveries, clearance 219 mm, est RMSE 79 mm, dock -5/13 mm -2.4 deg
+north_station  none       seed 701: docked     55 s, 3 plans, 0 recoveries, clearance 227 mm, est RMSE 69 mm, dock -4/11 mm -2.0 deg
+north_station  none       seed 702: docked     57 s, 4 plans, 0 recoveries, clearance 232 mm, est RMSE 109 mm, dock -6/13 mm -2.4 deg
+north_station  none       seed 703: docked     55 s, 3 plans, 0 recoveries, clearance 243 mm, est RMSE 68 mm, dock -8/13 mm -2.3 deg
+north_station  none       seed 704: docked     57 s, 4 plans, 0 recoveries, clearance 237 mm, est RMSE 91 mm, dock -8/14 mm -2.4 deg
+north_station  none       seed 705: docked     55 s, 3 plans, 0 recoveries, clearance 231 mm, est RMSE 60 mm, dock -6/12 mm -2.2 deg
+empty          none       seed 700: docked     52 s, 1 plans, 0 recoveries, clearance 349 mm, est RMSE 26 mm, dock -9/1 mm -0.2 deg
+empty          none       seed 701: docked     52 s, 1 plans, 0 recoveries, clearance 381 mm, est RMSE 36 mm, dock -6/0 mm 0.1 deg
+empty          none       seed 702: docked     52 s, 1 plans, 0 recoveries, clearance 303 mm, est RMSE 41 mm, dock -7/-1 mm 0.4 deg
+empty          none       seed 703: docked     52 s, 1 plans, 0 recoveries, clearance 372 mm, est RMSE 26 mm, dock -8/1 mm -0.0 deg
+empty          none       seed 704: docked     52 s, 1 plans, 0 recoveries, clearance 344 mm, est RMSE 36 mm, dock -9/1 mm 0.0 deg
+empty          none       seed 705: docked     52 s, 1 plans, 0 recoveries, clearance 400 mm, est RMSE 38 mm, dock -4/-0 mm 0.2 deg
+
+total 18 runs: docked 14, collision 0, no_path 4, not_docked 0

@@ -112,21 +112,33 @@ def build_scene_xml(cfg):
 """
 
 
+def _write_if_changed(path, data):
+    """Write bytes atomically and only when the content differs, so parallel runs sharing a robot folder never read a half-written file."""
+    try:
+        with open(path, "rb") as f:
+            if f.read() == data:
+                return
+    except OSError:
+        pass
+    tmp = f"{path}.{os.getpid()}.tmp"
+    with open(tmp, "wb") as f:
+        f.write(data)
+    os.replace(tmp, path)
+
+
 def write_scene(cfg, robot_dir, flip_marker=False, scene_name="scene_track_a.xml", with_camera=True):
     """Write the marker texture, the derived robot XML (with camera) and the scene into robot_dir; return the scene path."""
     import cv2
     from perception.aruco import make_marker_image
 
     img = make_marker_image(cfg.marker_id, cfg.marker_dictionary, cfg.marker_side_px, cfg.marker_border_px, flip_marker)
-    cv2.imwrite(os.path.join(robot_dir, cfg.marker_texture), img)
+    _write_if_changed(os.path.join(robot_dir, cfg.marker_texture), cv2.imencode(".png", img)[1].tobytes())
     if with_camera:
         with open(os.path.join(robot_dir, cfg.robot_xml)) as f:
             derived_name = os.path.splitext(cfg.robot_xml)[0] + "_cam.xml"
             derived = inject_camera(f.read(), cfg)
-        with open(os.path.join(robot_dir, derived_name), "w") as f:
-            f.write(derived)
+        _write_if_changed(os.path.join(robot_dir, derived_name), derived.encode())
         cfg = dataclasses.replace(cfg, robot_xml=derived_name)
     path = os.path.join(robot_dir, scene_name)
-    with open(path, "w") as f:
-        f.write(build_scene_xml(cfg))
+    _write_if_changed(path, build_scene_xml(cfg).encode())
     return path

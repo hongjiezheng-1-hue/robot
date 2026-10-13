@@ -54,7 +54,7 @@ def shortcut(blocked, path):
     return out
 
 
-def plan(grid, start_xy, goal_xy, inflate_radius, relax_radius=None, relax_zone=0.35):
+def plan(grid, start_xy, goal_xy, inflate_radius, relax_radius=None, relax_zone=0.35, body_radius=0.12, goal_search=0.8):
     """Waypoints (world coordinates, excluding the start) from start to goal, or None when no path is known.
 
     Obstacles are inflated by inflate_radius. Within relax_zone of the start the smaller relax_radius is used instead, so a robot
@@ -73,8 +73,20 @@ def plan(grid, start_xy, goal_xy, inflate_radius, relax_radius=None, relax_zone=
             if grid.inside(*si) and not relaxed[si]:
                 break
         blocked[near] = relaxed[near]
-    if not grid.inside(*gi) or not grid.inside(*si) or blocked[gi]:
+        # the robot's own footprint cannot be an obstacle: if the map says so, the map and the pose disagree (for example after a
+        # push the encoders did not see), and the planner has to start from here anyway
+        body = np.hypot((ix - si[0]) * grid.res, (iy - si[1]) * grid.res) <= body_radius
+        blocked[body] = False
+    if not grid.inside(*gi) or not grid.inside(*si):
         return None
+    if blocked[gi]:
+        # The goal is inside an obstacle of the map. Either the goal really is blocked or, more likely, the pose estimate is off and
+        # the map is shifted. Head for the nearest free cell: closer to the goal the marker comes into view and corrects the pose.
+        free = np.argwhere(~blocked)
+        dist = np.hypot((free[:, 0] - gi[0]) * grid.res, (free[:, 1] - gi[1]) * grid.res)
+        if len(free) == 0 or dist.min() > goal_search:
+            return None
+        gi = tuple(int(v) for v in free[int(np.argmin(dist))])
     path = astar(blocked, si, gi)
     if path is None:
         return None

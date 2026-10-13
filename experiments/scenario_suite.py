@@ -83,7 +83,7 @@ def main():
                                      push=d.push or None, **models)
                 m = navigation_metrics(log, scene_cfg, spec, dock)
                 row = dict(scenario=sname, disturbance=dname, variant=args.variant, seed=args.seed_base + trial, outcome=outcome(m),
-                           seconds=m["seconds"], replans=m["replans"], collided=m["collided"], clearance=None if not np.isfinite(m["clearance"]) else m["clearance"],
+                           seconds=m["seconds"], replans=m["replans"], recoveries=m["recoveries"], first_contact_s=m["first_contact_s"], collided=m["collided"], clearance=None if not np.isfinite(m["clearance"]) else m["clearance"],
                            est_rmse=None if not np.isfinite(m["est_pos_rmse"]) else m["est_pos_rmse"],
                            along=None if not np.isfinite(m["dock_along"]) else m["dock_along"],
                            lateral=None if not np.isfinite(m["dock_lateral"]) else m["dock_lateral"],
@@ -94,7 +94,7 @@ def main():
                         f.write(json.dumps(row) + "\n")
                 mm = lambda v: "-" if v is None else f"{1000 * v:.0f} mm"
                 dock_txt = "-" if row["along"] is None else f"{1000 * row['along']:.0f}/{1000 * row['lateral']:.0f} mm {row['heading']:.1f} deg"
-                print(f"{sname:14s} {dname:10s} seed {row['seed']}: {row['outcome']:10s} {row['seconds']:.0f} s, {row['replans']} plans, "
+                print(f"{sname:14s} {dname:10s} seed {row['seed']}: {row['outcome']:10s} {row['seconds']:.0f} s, {row['replans']} plans, {row['recoveries']} recoveries, "
                       f"clearance {mm(row['clearance'])}, est RMSE {mm(row['est_rmse'])}, dock {dock_txt}")
     n = len(rows)
     print(f"\ntotal {n} runs: docked {sum(r['outcome'] == 'docked' for r in rows)}, collision {sum(r['outcome'] == 'collision' for r in rows)}, "

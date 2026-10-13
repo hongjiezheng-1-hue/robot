@@ -1,0 +1,33 @@
+MuJoCo 3.3.7 | variant C
+s_course       lidar_x3   seed 800: docked     74 s, 8 plans, 0 recoveries, clearance 203 mm, est RMSE 30 mm, dock 2/-1 mm 0.4 deg
+s_course       lidar_x3   seed 801: no_path    28 s, 10 plans, 3 recoveries, clearance -, est RMSE -, dock -
+s_course       lidar_x3   seed 802: no_path    41 s, 22 plans, 3 recoveries, clearance -, est RMSE -, dock -
+s_course       lidar_x3   seed 803: docked     70 s, 7 plans, 0 recoveries, clearance 243 mm, est RMSE 15 mm, dock 1/-0 mm 0.3 deg
+s_course       lidar_x3   seed 804: docked     77 s, 10 plans, 1 recoveries, clearance 160 mm, est RMSE 97 mm, dock 1/-0 mm 0.2 deg
+s_course       lidar_x3   seed 805: docked     71 s, 8 plans, 0 recoveries, clearance 227 mm, est RMSE 27 mm, dock 4/0 mm 0.1 deg
+s_course       start_x3   seed 800: docked     75 s, 10 plans, 0 recoveries, clearance 203 mm, est RMSE 89 mm, dock 4/1 mm -0.1 deg
+s_course       start_x3   seed 801: no_path    14 s, 2 plans, 3 recoveries, clearance -, est RMSE -, dock -
+s_course       start_x3   seed 802: no_path    20 s, 6 plans, 3 recoveries, clearance -, est RMSE -, dock -
+s_course       start_x3   seed 803: docked     73 s, 7 plans, 0 recoveries, clearance 190 mm, est RMSE 41 mm, dock 5/-1 mm 0.4 deg
+s_course       start_x3   seed 804: no_path    12 s, 1 plans, 3 recoveries, clearance -, est RMSE -, dock -
+s_course       start_x3   seed 805: docked     76 s, 7 plans, 0 recoveries, clearance 228 mm, est RMSE 117 mm, dock 3/-0 mm 0.3 deg
+s_course       dropout50  seed 800: docked     72 s, 8 plans, 0 recoveries, clearance 230 mm, est RMSE 39 mm, dock 2/4 mm -0.6 deg
+s_course       dropout50  seed 801: docked     86 s, 29 plans, 2 recoveries, clearance 200 mm, est RMSE 125 mm, dock 1/-1 mm 0.3 deg
+s_course       dropout50  seed 802: docked     75 s, 10 plans, 0 recoveries, clearance 197 mm, est RMSE 61 mm, dock 2/-5 mm 1.1 deg
+s_course       dropout50  seed 803: docked     76 s, 8 plans, 0 recoveries, clearance 207 mm, est RMSE 15 mm, dock 5/-3 mm 0.7 deg
+s_course       dropout50  seed 804: docked     77 s, 11 plans, 0 recoveries, clearance 204 mm, est RMSE 114 mm, dock 2/-7 mm 1.5 deg
+s_course       dropout50  seed 805: docked     71 s, 9 plans, 0 recoveries, clearance 201 mm, est RMSE 36 mm, dock 1/0 mm 0.2 deg
+s_course       radius+5   seed 800: docked     72 s, 11 plans, 0 recoveries, clearance 219 mm, est RMSE 30 mm, dock -3/-1 mm 0.3 deg
+s_course       radius+5   seed 801: docked     83 s, 18 plans, 0 recoveries, clearance 182 mm, est RMSE 126 mm, dock -0/-6 mm 1.4 deg
+s_course       radius+5   seed 802: docked     81 s, 10 plans, 0 recoveries, clearance 221 mm, est RMSE 82 mm, dock -2/-2 mm 0.5 deg
+s_course       radius+5   seed 803: docked     74 s, 10 plans, 0 recoveries, clearance 213 mm, est RMSE 47 mm, dock -2/-3 mm 0.9 deg
+s_course       radius+5   seed 804: docked     83 s, 11 plans, 0 recoveries, clearance 194 mm, est RMSE 102 mm, dock 0/-10 mm 2.1 deg
+s_course       radius+5   seed 805: docked     75 s, 9 plans, 0 recoveries, clearance 211 mm, est RMSE 81 mm, dock -0/-1 mm 0.3 deg
+s_course       push       seed 800: docked     86 s, 23 plans, 1 recoveries, clearance 166 mm, est RMSE 173 mm, dock 1/-9 mm 2.0 deg
+s_course       push       seed 801: no_path    21 s, 9 plans, 3 recoveries, clearance -, est RMSE -, dock -
+s_course       push       seed 802: no_path    21 s, 6 plans, 3 recoveries, clearance -, est RMSE -, dock -
+s_course       push       seed 803: docked     76 s, 8 plans, 0 recoveries, clearance 240 mm, est RMSE 142 mm, dock 1/-0 mm 0.3 deg
+s_course       push       seed 804: no_path    22 s, 7 plans, 3 recoveries, clearance -, est RMSE -, dock -
+s_course       push       seed 805: docked     93 s, 36 plans, 2 recoveries, clearance 223 mm, est RMSE 131 mm, dock 4/-23 mm 4.9 deg
+
+total 30 runs: docked 22, collision 0, no_path 8, not_docked 0

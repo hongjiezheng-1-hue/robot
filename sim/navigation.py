@@ -20,7 +20,7 @@ from perception.lidar import LidarConfig, scan_mujoco
 from perception.occupancy import OccupancyGrid
 from sim.closed_loop import P0_START
 
-MODES = ("plan", "rotate", "follow", "align", "dock", "hold", "failed")
+MODES = ("plan", "rotate", "follow", "align", "dock", "hold", "failed", "search")
 
 
 def _valid_reference(grid, ref, radius, skip=0.35):
@@ -52,7 +52,7 @@ def contact_ids(model, base_body):
 
 def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0, gain_fn=None, estimate_scales=False, compensate=True,
                    lidar_cfg=None, speed=0.10, dock_speed=0.05, inflate=0.22, hard=0.17, max_seconds=240.0, hold_seconds=10.0, max_replans=40, map_reset_jump=0.10,
-                   meas_cov=None, noise=None, subpixel=True, seed=0, wheel_radius=0.033, track_nominal=0.288, grid_kwargs=None, on_step=None, marker_dropout=0.0, push=None):
+                   meas_cov=None, noise=None, subpixel=True, seed=0, wheel_radius=0.033, track_nominal=0.288, grid_kwargs=None, on_step=None, marker_dropout=0.0, push=None, max_recoveries=3):
     import mujoco
 
     from drivers.mujoco_tb3 import TICKS_PER_REV
@@ -83,7 +83,8 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
     log = {k: np.full((n_max, d), np.nan) for k, d in keys}
     log["mode"] = np.zeros(n_max, dtype=int)
     log["contact"] = np.zeros(n_max, dtype=bool)
-    map_resets, force_scan = [], False
+    map_resets, force_scan, recoveries = [], False, 0
+    search_start, last_update_step = 0, -10**9
     scans, replans = [], []                                        # (step, estimated pose, ranges), (step, waypoints)
     standoff_xy = np.array(standoff[:2])
 
@@ -94,7 +95,7 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
         if step % lidar_every == 0 or force_scan:
             force_scan = False
             ranges = scan_mujoco(drv.model, drv.data, lidar_cfg, base_id, drv.true_pose(), rng)
-            if mode not in ("dock", "hold"):
+            if mode not in ("dock", "hold", "search"):
                 grid.update(ekf.pose, ranges, lidar_cfg)           # mapped at the estimated pose
             scans.append((step, ekf.pose.copy(), ranges))
             last_ranges = ranges
@@ -107,12 +108,29 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
         if mode == "plan":
             if step >= 2 * lidar_every:                            # a couple of scans first
                 waypoints = plan_with_margins(grid, tuple(ekf.pose[:2]), tuple(standoff_xy), (inflate, 0.19, hard), relax_radius=hard)
-                if waypoints is None or len(replans) >= max_replans:
+                since = map_resets[-1] if map_resets else -1
+                thrash = sum(1 for r in replans if r[0] > since and step - r[0] < 100) >= 12  # many plans within 10 s: map probably corrupted
+                if (waypoints is None or thrash) and recoveries < max_recoveries:
+                    # recovery: the pose estimate (and so the map) may be wrong, for example after a large start offset or a push the
+                    # encoders cannot see. Turn towards where the marker should be, wait for a marker update to correct the pose,
+                    # then forget the map and plan again.
+                    recoveries += 1
+                    search_start, mode, waypoints = step, "search", None
+                elif waypoints is None or len(replans) >= max_replans:
                     mode = "failed"
                 else:
                     replans.append((step, [tuple(ekf.pose[:2])] + waypoints))
                     first = np.arctan2(waypoints[0][1] - ekf.pose[1], waypoints[0][0] - ekf.pose[0])
                     target_heading, mode, n_done = first, "rotate", 0
+        elif mode == "search":
+            bearing = np.arctan2(marker_world[1] - ekf.pose[1], marker_world[0] - ekf.pose[0])
+            err = wrap(bearing - ekf.pose[2])
+            w = float(np.clip(1.5 * err, -0.5, 0.5)) if abs(err) > np.radians(3.0) else 0.0
+            corrected = last_update_step >= search_start and step - last_update_step >= 10     # marker seen, estimate settled
+            if corrected or step - search_start > 100:
+                grid = OccupancyGrid(**(grid_kwargs or {}))
+                map_resets.append(step)
+                force_scan, mode, w = True, "plan", 0.0
         elif mode in ("rotate", "align"):
             err = wrap(target_heading - ekf.pose[2])
             w = float(np.clip(1.5 * err, -0.5, 0.5))
@@ -175,6 +193,7 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
             if z is not None:
                 before = ekf.pose[:2].copy()
                 ekf.update(z)
+                last_update_step = step
                 log["marker"][step] = z
                 if np.linalg.norm(ekf.pose[:2] - before) > map_reset_jump and mode in ("plan", "rotate", "follow"):
                     # the map was built with a pose that has just been corrected: it is inconsistent with the new estimate
@@ -199,7 +218,7 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
                scan_steps=np.array([s[0] for s in scans]), scan_poses=np.array([s[1] for s in scans]),
                scan_ranges=np.array([s[2] for s in scans]), replan_steps=np.array([r[0] for r in replans]), replan_len=np.array([len(r[1]) for r in replans], dtype=int),
                replan_xy=np.array([pt for r in replans for pt in r[1]]).reshape(-1, 2),
-               failed=(MODES[out["mode"][-1]] == "failed"), n_replans=len(replans), n_steps=n_max, map_reset_steps=np.array(map_resets, dtype=int))
+               failed=(MODES[out["mode"][-1]] == "failed"), n_replans=len(replans), n_recoveries=recoveries, n_steps=n_max, map_reset_steps=np.array(map_resets, dtype=int))
     return out
 
 
@@ -228,4 +247,5 @@ def navigation_metrics(log, scene_cfg, spec, dock_pose):
                 est_pos_rmse=float(np.sqrt(np.mean(est_err**2))), est_pos_max=float(est_err.max()),
                 dock_along=along, dock_lateral=lateral, dock_heading_deg=heading,
                 docked=bool((not log["failed"]) and docked(truth[-1], dock_pose, spec)),
-                moving_steps=int(len(moving)))
+                moving_steps=int(len(moving)), recoveries=int(log.get("n_recoveries", 0)),
+                first_contact_s=float(np.argmax(log["contact"]) * log["dt"]) if log["contact"].any() else None)

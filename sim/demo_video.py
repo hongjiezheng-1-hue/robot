@@ -23,7 +23,7 @@ from sim.navigation import MODES  # noqa: E402
 
 MODE_TEXT = {"plan": "planning", "rotate": "turning towards the path", "follow": "following the path (LQR on the EKF estimate)",
              "align": "aligning with the marker normal", "dock": "docking along the marker normal", "hold": "docked",
-             "failed": "no path found"}
+             "failed": "no path found", "search": "looking for the marker to correct the pose"}
 
 
 def _triangle(pose, size=0.14):
