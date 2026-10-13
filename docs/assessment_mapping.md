@@ -1,0 +1,50 @@
+# Where each assessment criterion is addressed
+
+For each criterion: what was done, where the code is, the evidence (stage numbers refer to [findings.md](findings.md)), and the limits. All results are from simulation (MuJoCo 3.3.7 locally); no hardware data yet. Run `python tests/run_all.py` (48 checks) to verify the models, filter, controller, planner and docking geometry.
+
+## 1. Modelling (20%)
+
+| What | Code | Evidence and limits |
+|---|---|---|
+| Unicycle state-space model with encoder inputs, exact-arc discrete prediction and its Jacobians | [`estimation/models.py`](../estimation/models.py): `encoders_to_vw` (l.18), `f_unicycle` (l.25), `F_unicycle` (l.37), `G_unicycle` (l.51) | Jacobians checked against finite differences in [`tests/test_models.py`](../tests/test_models.py). Kinematic model only: no dynamics, the odometry gains absorb slip and wheel-radius error (stage 0, 2). |
+| Marker measurement models (full pose; range and bearing) and Jacobians | `h_marker_pose` (l.67), `H_marker_pose` (l.75), `h_range_bearing` (l.84), `H_range_bearing` (l.89) | Frames are documented in [`perception/marker_pose.py`](../perception/marker_pose.py). |
+| Observability analysis | `observability_matrix` (l.119), `smallest_singular_value` (l.129); [`notebooks/01_model_analysis.ipynb`](../notebooks/01_model_analysis.ipynb) | Stage 1: one marker with range and bearing is rank deficient at all 289 sampled poses (smallest singular value 6e-17); the full marker pose restores it (0.39); two markers also (0.66). The explanation (rotation about the marker) is an interpretation of the numbers, not a proof. Decision: the EKF uses the full pose. |
+| Controllability of the tracking-error model | `tracking_error_model` (l.97), `controllability_rank` (l.111) | Stage 1: rank 3 unless the reference speed is zero in both components (rank 2). Consequence used in the design: the reference never stops ([`control/reference.py`](../control/reference.py): rounded corners at constant speed). |
+
+## 2. Sensing (20%): calibration, noise handling, frame management
+
+| What | Code | Evidence and limits |
+|---|---|---|
+| Drive characterisation and wheel-speed loop (dead zone and offset about 2.04 rad/s, PI on the encoders) | [`drivers/wheel_speed_controller.py`](../drivers/wheel_speed_controller.py), [`drivers/mujoco_tb3.py`](../drivers/mujoco_tb3.py) (encoders, 4096 ticks per revolution, assumed) | Stages 0 and 2: odometry speed overestimates by about 14 percent above 2 rad/s; the effective track grows with the spin rate (0.35 to 0.42 m against 0.288 m). |
+| Odometry gain calibration | [`sim/mujoco_run.py`](../sim/mujoco_run.py): `calibrate_gains` (l.221, single point), `calibrate_gain_table` (l.191, arcs), `make_gain_fn` (l.177); `to_nominal` in [`control/lqr_tracker.py`](../control/lqr_tracker.py) (l.22) inverts the gains in the command | Stage 6: the gain table is a much better fixed-gain baseline than the single-point calibration (96 against 183 mm). The gains depend on speed and yaw rate and on the MuJoCo version (yaw ratio 0.61 on 3.15.0, 0.84 on 3.3.7). Calibrated in the same simulator under ideal conditions, so it will not transfer to hardware as it is. |
+| Camera: ArUco detection, sub-pixel corners, pose from corners, intrinsics | [`perception/aruco.py`](../perception/aruco.py) (`detect_markers`, l.21), [`perception/marker_pose.py`](../perception/marker_pose.py) (`camera_intrinsics` l.19, `estimate_marker_pose` l.25: both planar-pose candidates refined, lowest reprojection error kept) | Stage 3 (synthetic corner-noise study, solver finding) and stage 5 to 7 (MuJoCo residuals): the error is mostly along the line of sight, it grows with distance, and heading outliers appear at about 3 m (planar ambiguity). |
+| Noise models | `marker_measurement_cov` ([`estimation/ekf.py`](../estimation/ekf.py) l.30, distance-dependent, isotropic) and `OdometryNoise` (l.22, floor plus relative to speed); LiDAR noise in [`perception/lidar.py`](../perception/lidar.py) (`_add_noise`, l.35) | Stage 7: an anisotropic noise model fitted to the measured standard deviations was worse and was dropped; the residual bias and correlations explain why. |
+| Frame management | Robot frame x forward, y left at the wheel-axle centre; camera frame converted by `R_CV_TO_ROBOT` with the camera mounting offset; LiDAR mount in `LidarConfig`; marker pose and dock poses in the world frame ([`control/docking.py`](../control/docking.py)) | Frame conversion verified on synthetic projections to 1e-6 (stage 3). Camera extrinsics and LiDAR mount are assumed values, to be replaced by measurements. |
+| LiDAR model | [`perception/lidar.py`](../perception/lidar.py): 360 beams, 0.12 to 3.5 m, 5 Hz, noise 1 percent of range; MuJoCo ray casting | [`experiments/lidar_check.py`](../experiments/lidar_check.py): matches an analytic box scan. The parameters are from memory of the LDS-01, not checked against the documentation. |
+
+## 3. Estimation (20%): KF/EKF design, tuning, reported performance
+
+| What | Code | Evidence and limits |
+|---|---|---|
+| EKF with odometry prediction and marker-pose update (Joseph form, optional chi-square gate) | [`estimation/ekf.py`](../estimation/ekf.py): `MarkerEKF` (l.62), `predict` (l.96), `update` (l.125); tests in [`tests/test_ekf.py`](../tests/test_ekf.py) | Variants: A (fixed gains, single point or gain table), B (gains estimated online as states), C (gain table times an online correction). |
+| Consistency and error metrics (NEES, ANEES, 95 percent bound) and replay on logged runs | [`experiments/replay.py`](../experiments/replay.py): `replay_states`, `metrics` (l.73) | Stage 4 (synthetic): exact gains give ANEES 3.36 (ideal 3), B 2.27. Stage 6 (MuJoCo): gain table 96 mm, B 80 mm in the second half. Every variant on MuJoCo data is overconfident (ANEES at least 17). |
+| Tuning studies | `experiments/ekf_sensitivity.py`, `noise_model_study.py`, `validation_runs.py` | Process-noise inflation makes the filter more honest but not more accurate. Gating hurts when the filter is already off (553 genuine updates rejected, stage 5). |
+| Independent validation, claims withdrawn | Stage 8 | On new paths B is not better than the gain table (113.9 against 41.6 mm on the final path); C improves consistency, not reliably accuracy. Earlier claims about the hybrid noise model and B's superiority were withdrawn. |
+| Estimation in the closed loop | [`sim/navigation.py`](../sim/navigation.py) (`ekf.predict` and `ekf.update` inside `run_navigation`) | Stage 10: estimator position error between marker sightings up to 754 mm; it drops to a few millimetres when the marker is in view. |
+
+## 4. Control (20%): controller design, tuning, tracking results
+
+| What | Code | Evidence and limits |
+|---|---|---|
+| Reference trajectory (polyline with circular fillets, constant speed) | [`control/reference.py`](../control/reference.py): `build_reference` (l.17) | Test: smooth, spacing equals speed times dt, never zero speed ([`tests/test_control.py`](../tests/test_control.py)). |
+| LQR tracker on the estimated pose: error model in the robot frame, discretisation, Riccati solution at every step, Bryson weights, speed limits | [`control/lqr_tracker.py`](../control/lqr_tracker.py): `discretise` (l.14), `LQRTracker` (l.37) with `gain` (l.45) and `command` (l.57); `wheel_speeds` (l.33) | Gains stable over the operating range (test). Weights follow Bryson's rule and were not swept: 0.10 m, 0.05 m, 10 degrees and 0.05 m/s, 0.3 rad/s; limits 0.15 m/s and 0.6 rad/s. |
+| Closed-loop tracking results | [`sim/closed_loop.py`](../sim/closed_loop.py), [`experiments/lqr_tracking.py`](../experiments/lqr_tracking.py) | Stage 9: tracking RMSE 52 to 108 mm when the filter works, final dock error 1 to 29 mm along-track and below 1 degree; the tracking error is the same size as the estimator error, so the estimator limits accuracy. The single-point calibration failed in all three trials; one table trial diverged after about 90 s without the marker. Three trials per variant, speed and start offset confounded. |
+| Path planning and docking | [`control/planner.py`](../control/planner.py) (`astar` l.11, `plan` l.57, `path_blocked` l.85, `plan_with_margins` l.108), [`control/docking.py`](../control/docking.py) (`dock_poses` l.24, `dock_error` l.34, `docked` l.41) | Stage 10. Dock distances and tolerances (3 cm lateral, 5 cm along-track, 5 degrees) are provisional until confirmed with the staff. |
+
+## 5. Integration and robustness (20%): performance under disturbance and noise
+
+| What | Code | Evidence and limits |
+|---|---|---|
+| Full pipeline: LiDAR map from the estimated pose, A* with re-planning, LQR on the EKF estimate, marker docking | [`sim/navigation.py`](../sim/navigation.py): `run_navigation` (l.53, state machine plan, rotate, follow, align, dock, hold); entry point [`main.py`](../main.py); occupancy grid [`perception/occupancy.py`](../perception/occupancy.py) | Unknown S-shaped board course. Fresh test (8 seeds): B 8 of 8, table and C 7 of 8, no collision; the one failure was a planning failure, fixed afterwards (that series is then no longer independent). Closest approach to a board 174 mm (robot half-width about 153 mm). |
+| Noise and disturbance included | Random start offset (5 cm, 3 degrees) with the robot believing it is on the nominal mark; encoder quantisation; wheel slip behaviour of the MuJoCo robot; LiDAR and marker noise; marker out of view for up to about 40 s | Failure modes found and fixed (stage 10): re-plan loop near an obstacle, stale map after a large pose correction (map is cleared when a marker update moves the position by more than 10 cm), no path at the 0.22 m margin in a narrow channel (margin fallback), a start too close to the wall. |
+| Honest evaluation | Truth is only logged; contacts come from MuJoCo; development and fresh seed sets are labelled | Not tested: pushes or changed friction during the run, noise-level sweeps, other board layouts, more than one marker placement, hardware. |

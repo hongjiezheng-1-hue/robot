@@ -76,6 +76,10 @@ python experiments/lidar_navigation.py --model-dir robotis_mujoco_menagerie/robo
 
 The last two write a video and an overview image, and open an interactive 3D viewer. The scene generator writes its files next to the robot model, and the marker texture type is picked by a test render because MuJoCo versions differ.
 
+## Assessment criteria and where they are addressed
+
+See [docs/assessment_mapping.md](docs/assessment_mapping.md): for modelling, sensing, estimation, control and integration it lists the code (file and line), the evidence in the findings log, and the limits.
+
 ## Findings so far
 
 All numbers are in [docs/findings.md](docs/findings.md) with the conditions and limits; the main points:
