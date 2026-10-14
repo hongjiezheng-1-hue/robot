@@ -42,6 +42,8 @@ def main():
     ap.add_argument("--model-dir", help="folder robotis_tb3 of the MuJoCo Menagerie (default: search common places)")
     ap.add_argument("--variant", choices=("C", "table", "B"), default="C",
                     help="odometry model: C = gain table x online correction (default), table = gain table, B = gains estimated online")
+    ap.add_argument("--scenario", default="s_course", help="layout from sim/scenarios.py: s_course, s_mirrored, gate, scattered, u_trap, north_station, empty")
+    ap.add_argument("--disturbance", default="none", help="none, lidar_x3, start_x3, dropout50, radius+5, push (see sim/scenarios.py)")
     ap.add_argument("--seed", type=int, default=401, help="seed of the random start offset and sensor noise")
     ap.add_argument("--speed", type=float, default=0.10, help="path-following speed [m/s]")
     ap.add_argument("--out-dir", default="demo_output")
@@ -58,7 +60,8 @@ def main():
     from control.docking import DockSpec, dock_poses
     from control.lqr_tracker import LQRTracker
     from drivers.mujoco_tb3 import MujocoTB3Driver
-    from sim.course import S_COURSE, START
+    from perception.lidar import LidarConfig
+    from sim.scenarios import DISTURBANCES, SCENARIOS
     from sim.mujoco_run import RunConfig, calibrate_gain_table, pick_texture_type
     from sim.navigation import navigation_metrics, run_navigation
     from sim.scene import SceneConfig, write_scene
@@ -67,23 +70,28 @@ def main():
     model_dir = find_model_dir(args.model_dir)
     out = pathlib.Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    print(f"MuJoCo {mujoco.__version__} | model folder {model_dir} | variant {args.variant} | seed {args.seed}")
+    print(f"MuJoCo {mujoco.__version__} | model folder {model_dir} | variant {args.variant} | seed {args.seed} | scenario {args.scenario} | disturbance {args.disturbance}")
 
-    scene_cfg = pick_texture_type(SceneConfig(obstacles=S_COURSE), model_dir)
-    drv = MujocoTB3Driver(write_scene(scene_cfg, model_dir, scene_name="scene_demo.xml"))
+    if args.scenario not in SCENARIOS or args.disturbance not in DISTURBANCES:
+        raise SystemExit(f"scenario must be one of {list(SCENARIOS)}, disturbance one of {list(DISTURBANCES)}")
+    scen, dist = SCENARIOS[args.scenario], DISTURBANCES[args.disturbance]
+    sx, sy, syaw = scen.station
+    probe = pick_texture_type(SceneConfig(), model_dir)           # which marker texture this MuJoCo build renders (probe on the default scene)
+    scene_cfg = SceneConfig(obstacles=scen.obstacles, station_x=sx, station_y=sy, station_yaw=syaw, marker_texture_type=probe.marker_texture_type)
+    drv = MujocoTB3Driver(write_scene(scene_cfg, model_dir, scene_name=f"scene_demo_{os.getpid()}.xml"))
     if args.variant == "B":
         models = dict(gain_fn=None, estimate_scales=True)
     else:
         print("[1/3] measuring the odometry gain table on short arcs in an empty room ...", flush=True)
         calib_cfg = SceneConfig(room_x=8.0, room_y=8.0, obstacles=(), station_x=3.5, marker_texture_type=scene_cfg.marker_texture_type)
-        gain_fn, _ = calibrate_gain_table(MujocoTB3Driver(write_scene(calib_cfg, model_dir, scene_name="scene_demo_calib.xml")), RunConfig())
+        gain_fn, _ = calibrate_gain_table(MujocoTB3Driver(write_scene(calib_cfg, model_dir, scene_name=f"scene_demo_calib_{os.getpid()}.xml")), RunConfig())
         models = dict(gain_fn=gain_fn, estimate_scales=args.variant == "C")
 
     spec = DockSpec()
     standoff, dock = dock_poses((scene_cfg.station_x, scene_cfg.station_y, scene_cfg.station_yaw), spec)
     rng = np.random.default_rng(args.seed)
-    nominal = np.array(START)
-    start = nominal + rng.normal(0.0, [0.05, 0.05, np.radians(3.0)])
+    nominal = np.array(scen.start)
+    start = nominal + dist.start_offset_scale * rng.normal(0.0, [0.05, 0.05, np.radians(3.0)])
     print(f"[2/3] navigating: the robot believes it starts at {np.round(nominal, 2)}, it really starts at {np.round(start, 2)}; "
           f"stand-off {np.round(standoff[:2], 2)}, dock {np.round(dock[:2], 2)}", flush=True)
     t1 = time.time()
@@ -94,7 +102,8 @@ def main():
         live = LiveView(drv, speedup=args.speedup)
         on_step, viewer = live.on_step, live
     log = run_navigation(drv, scene_cfg, standoff, dock, LQRTracker(0.1), start, nominal, speed=args.speed, seed=args.seed,
-                         on_step=on_step, **models)
+                         on_step=on_step, lidar_cfg=LidarConfig(sigma_floor=0.01 * dist.lidar_noise_scale, sigma_rel=0.01 * dist.lidar_noise_scale),
+                         wheel_radius=0.033 * (1 + dist.wheel_radius_error), marker_dropout=dist.marker_dropout, push=dist.push or None, **models)
     if viewer is not None and not viewer.running():
         print("viewer closed before the run finished; stopping")
         return 2
@@ -114,7 +123,7 @@ def main():
         print("RESULT: DOCKED within tolerance" if ok else "RESULT: outside tolerance or contact")
 
     np.savez(out / "demo_log.npz", **log)
-    summary = dict(variant=args.variant, seed=args.seed, speed=args.speed, success=ok, **m)
+    summary = dict(variant=args.variant, scenario=args.scenario, disturbance=args.disturbance, seed=args.seed, speed=args.speed, success=ok, **m)
     (out / "demo_summary.json").write_text(json.dumps(summary, indent=2, default=lambda o: o.item() if hasattr(o, "item") else str(o)))
     print(f"wrote {out / 'demo_log.npz'} and {out / 'demo_summary.json'}")
 
@@ -126,7 +135,7 @@ def main():
         text = (f"{verdict}  along {1000 * m['dock_along']:.0f} mm, lateral {1000 * m['dock_lateral']:.0f} mm, "
                 f"heading {m['dock_heading_deg']:.1f} deg")
         render_video(log, scene_cfg, drv, out / "demo.mp4", step=args.video_step, fps=args.fps, result_text=text,
-                     overview_path=out / "demo_overview.png")
+                     label=f"{args.scenario} / {args.disturbance} / seed {args.seed}", overview_path=out / "demo_overview.png")
         print(f"wrote {out / 'demo.mp4'} and {out / 'demo_overview.png'}")
     print(f"total {time.time() - t0:.0f} s")
     if viewer is not None:

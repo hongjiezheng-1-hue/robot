@@ -4,6 +4,7 @@ The waypoint follower below reads the TRUE pose. It exists only to generate a mo
 the project's controller; the estimator replays the encoder and camera data without ever seeing the truth.
 """
 
+import os
 from dataclasses import dataclass
 
 import numpy as np
@@ -113,7 +114,7 @@ def pick_texture_type(scene_cfg, robot_dir, flip_marker=False):
 
     for texture_type in ("2d", "cube"):
         cfg = dataclasses.replace(scene_cfg, marker_texture_type=texture_type)
-        model = mujoco.MjModel.from_xml_path(write_scene(cfg, robot_dir, flip_marker=flip_marker))
+        model = mujoco.MjModel.from_xml_path(write_scene(cfg, robot_dir, flip_marker=flip_marker, scene_name=f"scene_probe_{os.getpid()}.xml"))
         data = mujoco.MjData(model)
         data.qpos[0] = cfg.station_x - 0.8
         data.qpos[1] = cfg.station_y

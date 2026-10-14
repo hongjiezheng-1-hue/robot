@@ -58,7 +58,7 @@ class _GridReplay:
         return self.grid
 
 
-def render_video(log, scene_cfg, drv, out_path, step=2, fps=15, hold_seconds=3.0, result_text="", lidar_cfg=None, overview_path=None):
+def render_video(log, scene_cfg, drv, out_path, step=2, fps=15, hold_seconds=3.0, result_text="", lidar_cfg=None, overview_path=None, label=""):
     lidar_cfg = lidar_cfg or LidarConfig()
     truth, est, cov, dt = log["truth"], log["est_pose"], log["est_cov"], float(log["dt"])
     n = len(truth)
@@ -95,7 +95,9 @@ def render_video(log, scene_cfg, drv, out_path, step=2, fps=15, hold_seconds=3.0
     for i, (cx, cy, sx, sy) in enumerate(scene_cfg.obstacles):
         ax_map.add_patch(Rectangle((cx - sx / 2, cy - sy / 2), sx, sy, fill=False, ec="#c9803a", lw=1.6, ls="--", zorder=1,
                                    label="true board (unknown to the robot)" if i == 0 else None))
-    ax_map.add_patch(Rectangle((scene_cfg.station_x - 0.08, scene_cfg.station_y - 0.14), 0.16, 0.28, fc="#2f9a3c", ec="0.2", zorder=1))
+    sc_, ss_ = np.cos(scene_cfg.station_yaw), np.sin(scene_cfg.station_yaw)
+    corners = np.array([[-0.08, -0.14], [0.08, -0.14], [0.08, 0.14], [-0.08, 0.14]]) @ np.array([[sc_, ss_], [-ss_, sc_]]) + [scene_cfg.station_x, scene_cfg.station_y]
+    ax_map.add_patch(Polygon(corners, closed=True, fc="#2f9a3c", ec="0.2", zorder=1))
     ax_map.plot(*log["dock"][:2], "g*", ms=11, zorder=3, label="dock pose")
     ax_map.plot(*log["standoff"][:2], "m*", ms=9, zorder=3, label="stand-off pose")
     beams = LineCollection([], colors="tab:cyan", lw=0.4, alpha=0.45, zorder=2)
@@ -186,7 +188,7 @@ def render_video(log, scene_cfg, drv, out_path, step=2, fps=15, hold_seconds=3.0
         ell.set_height(max(h_, 1e-3))
         ell.set_angle(ang)
         mode = MODES[int(log["mode"][k])]
-        title.set_text(f"t = {t[k]:5.1f} s   {MODE_TEXT[mode]}   |   EKF error {err_mm[k]:4.0f} mm, "
+        title.set_text(f"{label}   t = {t[k]:5.1f} s   {MODE_TEXT[mode]}   |   EKF error {err_mm[k]:4.0f} mm, "
                        f"heading {np.degrees(abs(wrap(truth[k, 2] - est[k, 2]))):.1f} deg")
         cursor.set_xdata([t[k], t[k]])
         if final and result_text:

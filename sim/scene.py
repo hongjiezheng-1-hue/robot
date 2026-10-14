@@ -9,6 +9,7 @@ values; the defaults are placeholders to be replaced by the lab measurements.
 import dataclasses
 import math
 import os
+import time
 from dataclasses import dataclass
 
 
@@ -123,6 +124,12 @@ def _write_if_changed(path, data):
     tmp = f"{path}.{os.getpid()}.tmp"
     with open(tmp, "wb") as f:
         f.write(data)
+    for attempt in range(20):                  # Windows refuses to replace a file that another process has open
+        try:
+            os.replace(tmp, path)
+            return
+        except PermissionError:
+            time.sleep(0.1)
     os.replace(tmp, path)
 
 
