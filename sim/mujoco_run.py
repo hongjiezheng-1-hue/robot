@@ -1,11 +1,7 @@
 """Data collection on the MuJoCo robot for EKF validation, plus a gain calibration run.
 
-In short:
-- The simulated motors have a dead zone (handled in drivers/), and the encoder odometry is wrong by a factor that depends on
-  the speed and the turn rate.
-- calibrate_gain_table drives short arcs at four speeds and four turn rates and compares the true motion with the encoder motion.
-- The resulting gain table is used by the EKF and to correct the speed commands.
-- It only holds for this simulator; it has to be measured again on the real robot.
+In short: the odometry error changes with speed and turning, so a table of correction factors is measured here.
+It only fits this simulator and must be measured again on the real robot.
 
 The waypoint follower below reads the TRUE pose. It exists only to generate a motion for the data log and is not
 the project's controller; the estimator replays the encoder and camera data without ever seeing the truth.

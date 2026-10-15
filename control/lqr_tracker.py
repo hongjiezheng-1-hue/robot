@@ -1,10 +1,7 @@
 """LQR tracking of a unicycle reference using the estimated pose only.
 
-In short:
-- The controller compares the reference with the ESTIMATED pose (never the true pose) and expresses the error in the robot frame.
-- It linearises the error dynamics, solves the discrete Riccati equation at every step and gets a gain K.
-- Command = reference speeds plus the correction -K e, limited to 0.15 m/s and 0.6 rad/s.
-- The weights follow Bryson's rule. The tracking error is about the size of the estimator error, so the estimator limits accuracy.
+In short: LQR uses only the estimated pose and solves the Riccati equation at every step.
+The estimator, not the controller, limits the accuracy.
 
 Error in the robot frame e = [e_x, e_y, e_theta] = [R(theta_hat)^T (p_ref - p_hat), theta_ref - theta_hat]. About the
 reference speeds (v_r, w_r) the error dynamics are e_dot = A e + B du with du = u - u_ref (estimation.models.tracking_error_model).
