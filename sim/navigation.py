@@ -1,5 +1,12 @@
 """Closed-loop navigation through unknown obstacles, then docking, on the MuJoCo robot.
 
+In short:
+- This is the main loop that connects everything: estimator, map, planner, controller and docking.
+- Every step the encoders and the camera update the EKF; every second step the LiDAR updates the map at the estimated pose.
+- The planner (A*) treats unknown space as free and plans again when a new scan shows that the path is blocked.
+- The controller only gets the estimate: see tracker.command(ekf.pose, r) below.
+- When a marker update moves the estimate a lot, the old map no longer fits, so it is cleared and built again.
+
 Sensing: wheel encoders and the camera feed the EKF; the 2D LiDAR builds an occupancy grid from the ESTIMATED pose. The planner
 (A* on the inflated grid), the LQR tracker and the docking logic only use the estimate and the grid. The obstacles are not given:
 unknown cells are planned as free, and the path is re-planned whenever a scan shows that it is blocked. The truth is read from the

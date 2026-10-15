@@ -1,5 +1,12 @@
 """Platform and measurement models for the TurtleBot3 Track A pipeline.
 
+In short:
+- The robot is modelled as a unicycle: the state is x, y and heading; the inputs are forward speed and turn rate from the encoders.
+- The camera measures the marker pose: the marker position in the robot frame and the direction the marker faces.
+- Observability (checked numerically, findings stage 1): with one marker, range and bearing alone are not enough; the full
+  marker pose is.
+- Controllability: the tracking-error model is controllable unless the reference speed is zero, so the reference never stops.
+
 Conventions: world-frame state x = [px, py, theta]; body-frame input u = [v, w]
 (linear and angular velocity); angles in radians. A marker is described by its
 known world pose (mx, my, psi).

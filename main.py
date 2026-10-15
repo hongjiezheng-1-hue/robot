@@ -1,5 +1,11 @@
 """Single-command demonstration: navigate an unknown S-shaped board course with LiDAR and dock at the ArUco station (MuJoCo).
 
+In short:
+- This one command runs the whole project: it builds the room, calibrates the odometry, then navigates and docks.
+- The robot does not know where the obstacles are; it finds them with the LiDAR.
+- The controller only uses the estimated pose. The simulator truth is only used to measure the result.
+- Results over many runs are in docs/findings.md, stages 10 and 11.
+
     python main.py --model-dir <robotis_mujoco_menagerie>/robotis_tb3
 
 What happens (everything above the sensors uses only the estimated pose, never the simulator truth):

@@ -1,5 +1,12 @@
 """EKF for the Track A robot: wheel-encoder odometry for prediction, ArUco marker pose for update.
 
+In short:
+- Predict: the wheel encoders move the pose forward and the uncertainty grows.
+- Update: when the camera sees the marker, the difference between the measured and the expected marker pose corrects the
+  pose, and the uncertainty shrinks.
+- Odometry options: a fixed gain table, gains estimated online (B), or the table with an online correction (C, the default).
+- Consistency is checked with NEES (about 3 is ideal). On simulator data the filter is overconfident (findings stages 6 to 8).
+
 Two variants share this class:
   A: pose state [px, py, theta]; odometry scale factors are fixed, taken from a calibration.
   B: the two odometry scale factors are added to the state and estimated online.

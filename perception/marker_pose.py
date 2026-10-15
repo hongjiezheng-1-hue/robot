@@ -1,5 +1,11 @@
 """Marker pose from detected ArUco corners, expressed in the robot frame.
 
+In short:
+- OpenCV finds the four marker corners; solvePnP turns them into the marker pose relative to the camera.
+- A flat marker has two possible solutions; both are refined and the one with the smaller reprojection error is kept.
+- The pose is then converted from the camera frame to the robot frame with the camera mounting position.
+- The error grows with distance, mostly along the line of sight, so the EKF uses a noise that grows with distance.
+
 Frames: robot frame is x forward, y left, z up, origin at the wheel-axle centre (the unicycle reference point).
 OpenCV camera frame is x right, y down, z forward. The camera is assumed to look along the robot x axis; its
 position in the robot frame is a configuration value (extrinsics, to be replaced by the real camera mounting).
