@@ -45,7 +45,7 @@ def main():
     ap.add_argument("--model-dir", help="folder robotis_tb3 of the MuJoCo Menagerie (default: search common places)")
     ap.add_argument("--variant", choices=("C", "table", "B"), default="C",
                     help="odometry model: C = gain table x online correction (default), table = gain table, B = gains estimated online")
-    ap.add_argument("--scenario", default="s_course", help="layout from sim/scenarios.py: s_course, s_mirrored, gate, scattered, u_trap, north_station, empty")
+    ap.add_argument("--scenario", default="s_course", help="layout from sim/scenarios.py: s_course, s_mirrored, gate, scattered, u_trap, north_station, empty, chicane")
     ap.add_argument("--disturbance", default="none", help="none, lidar_x3, start_x3, dropout50, radius+5, push (see sim/scenarios.py)")
     ap.add_argument("--seed", type=int, default=401, help="seed of the random start offset and sensor noise")
     ap.add_argument("--speed", type=float, default=0.10, help="path-following speed [m/s]")

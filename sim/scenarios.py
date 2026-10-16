@@ -36,6 +36,11 @@ SCENARIOS = {s.name: s for s in [
     Scenario("north_station", "station on the north wall (marker faces south), one board",
              ((-0.4, 0.35, 0.10, 1.20),), (-1.65, -0.6, 0.0), STATION_NORTH),
     Scenario("empty", "no obstacles", (), (-1.65, -0.6, 0.0)),
+    # added after the stage 11 suite, for demonstrations: blocks placed ON the straight line to the goal, so the planned path has
+    # to weave between them (not part of the stage 11 counts)
+    Scenario("chicane", "blocks on the direct line to the goal; the robot has to weave between them",
+             ((-1.0, -0.2, 0.30, 0.90), (0.0, 0.5, 0.30, 1.00), (0.0, -1.15, 0.30, 0.70)),
+             (-1.65, -0.2, 0.0)),
 ]}
 
 
