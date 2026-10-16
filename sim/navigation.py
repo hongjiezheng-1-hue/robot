@@ -189,9 +189,12 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
         ticks_prev = ticks
         ekf.predict(omega[0], omega[1], dt)
         renderer.update_scene(drv.data, camera=scene_cfg.camera_name)
-        ids, corners = detect_markers(renderer.render(), scene_cfg.marker_dictionary, subpixel=subpixel)
+        image = renderer.render()
+        ids, corners = detect_markers(image, scene_cfg.marker_dictionary, subpixel=subpixel)
+        marker_corners = None
         if ids is not None and scene_cfg.marker_id in ids.flatten() and drop_rng.random() >= marker_dropout:
             c = corners[list(ids.flatten()).index(scene_cfg.marker_id)].reshape(4, 2)
+            marker_corners = c
             z = estimate_marker_pose(c, K, scene_cfg.marker_size, scene_cfg.camera_pos)
             if z is not None:
                 before = ekf.pose[:2].copy()
@@ -207,7 +210,8 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
         log["truth"][step] = drv.true_pose()                       # logged for evaluation only
         log["est_pose"][step], log["est_cov"][step], log["wheel_omega"][step] = ekf.pose, ekf.pose_cov.ravel(), omega
         log["cmd"][step], log["mode"][step], log["contact"][step] = (v, w), MODES.index(mode), hit
-        if on_step is not None and on_step(dict(step=step, dt=dt, mode=mode, est=ekf.pose.copy(), ranges=last_ranges, plan=waypoints)):
+        if on_step is not None and on_step(dict(step=step, dt=dt, mode=mode, est=ekf.pose.copy(), ranges=last_ranges, plan=waypoints,
+                                                    image=image, marker_corners=marker_corners)):
             n_max = step + 1                                       # the caller asked to stop (for example the viewer was closed)
             break
         if mode == "hold" and hold_left <= 0:

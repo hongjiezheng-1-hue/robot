@@ -1,5 +1,8 @@
 """Live MuJoCo viewer for the navigation demo: the scene, the LiDAR beams, the estimated pose and the current plan.
 
+A second window shows the robot's own camera image, the same image the ArUco detector gets, with the detected marker
+outlined in green.
+
 The robot, boards and station are drawn by MuJoCo from the simulator state (the "world"). Everything added on top comes from the
 robot's own side: red = estimated pose, cyan lines = LiDAR beams that returned a range, purple = the path being followed.
 The beams start at the true sensor position because that is where the simulated sensor is; this is for display only.
@@ -13,8 +16,10 @@ from perception.lidar import LidarConfig, beam_angles, sensor_origin
 
 
 class LiveView:
-    def __init__(self, drv, speedup=1.0, lidar_cfg=None):
+    def __init__(self, drv, speedup=1.0, lidar_cfg=None, show_camera=True):
         import mujoco.viewer
+
+        self.show_camera = show_camera
 
         self.drv, self.speedup, self.cfg = drv, speedup, lidar_cfg or LidarConfig()
         self.viewer = mujoco.viewer.launch_passive(drv.model, drv.data)
@@ -71,12 +76,34 @@ class LiveView:
                 for p0, p1 in zip(pts[:-1], pts[1:]):
                     self._line(scn, (p0[0], p0[1], 0.02), (p1[0], p1[1], 0.02), 0.012, (0.6, 0.2, 0.8, 0.9))
         self.viewer.sync()
+        if self.show_camera and info.get("image") is not None:
+            self._show_camera(info)
         wait = info["step"] * info["dt"] / self.speedup - (time.time() - self.t_start)
         if wait > 0:
             time.sleep(wait)
         return False
 
+    def _show_camera(self, info):
+        """Second window: exactly the image the robot's camera gives the detector, with the detected marker outlined."""
+        import cv2
+
+        img = cv2.cvtColor(info["image"], cv2.COLOR_RGB2BGR)
+        if info.get("marker_corners") is not None:
+            cv2.polylines(img, [np.asarray(info["marker_corners"], dtype=np.int32).reshape(-1, 1, 2)], True, (0, 255, 0), 3)
+            label = "marker detected"
+        else:
+            label = "no marker in view"
+        cv2.putText(img, f"robot camera | {label} | mode: {info['mode']}", (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        cv2.imshow("Robot camera", img)
+        cv2.waitKey(1)
+
     def wait_until_closed(self):
+        import cv2
+
         while self.viewer.is_running():
             self.viewer.sync()
+            if self.show_camera:
+                cv2.waitKey(1)                     # keep the camera window responsive
             time.sleep(0.05)
+        if self.show_camera:
+            cv2.destroyAllWindows()
