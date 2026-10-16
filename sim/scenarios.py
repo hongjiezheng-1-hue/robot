@@ -41,6 +41,9 @@ SCENARIOS = {s.name: s for s in [
     Scenario("chicane", "blocks on the direct line to the goal; the robot has to weave between them",
              ((-1.0, -0.2, 0.30, 0.90), (0.0, 0.5, 0.30, 1.00), (0.0, -1.15, 0.30, 0.70)),
              (-1.65, -0.2, 0.0)),
+    # added later as a question check: the robot starts facing away from the goal and the marker (not part of stage 11)
+    Scenario("facing_away", "the S course, but the robot starts facing away from the goal",
+             ((-1.5, 0.65, 0.10, 1.70), (-0.5, -0.65, 0.10, 1.70), (0.5, 0.65, 0.10, 1.70)), (-1.65, -0.6, math.pi)),
 ]}
 
 
