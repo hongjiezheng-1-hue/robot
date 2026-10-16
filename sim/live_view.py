@@ -1,7 +1,7 @@
 """Live MuJoCo viewer for the navigation demo: the scene, the LiDAR beams, the estimated pose and the current plan.
 
-A second window shows the robot's own camera image, the same image the ArUco detector gets, with the detected marker
-outlined in green.
+A second window (sim/live_dashboard.py) shows the 2D map the robot builds, its plan, the estimated and true path, the robot
+camera image (the same image the ArUco detector gets, detected marker outlined in green) and the estimator error.
 
 The robot, boards and station are drawn by MuJoCo from the simulator state (the "world"). Everything added on top comes from the
 robot's own side: red = estimated pose, cyan lines = LiDAR beams that returned a range, purple = the path being followed.
@@ -16,10 +16,16 @@ from perception.lidar import LidarConfig, beam_angles, sensor_origin
 
 
 class LiveView:
-    def __init__(self, drv, speedup=1.0, lidar_cfg=None, show_camera=True):
+    def __init__(self, drv, speedup=1.0, lidar_cfg=None, show_camera=None, scene_cfg=None, standoff=None, dock=None, dashboard=True):
         import mujoco.viewer
 
-        self.show_camera = show_camera
+        self.dashboard = None
+        if dashboard and scene_cfg is not None:
+            from sim.live_dashboard import LiveDashboard
+
+            self.dashboard = LiveDashboard(scene_cfg, standoff, dock)
+        # the dashboard already shows the camera; the separate OpenCV camera window is used only without it
+        self.show_camera = (self.dashboard is None) if show_camera is None else show_camera
 
         self.drv, self.speedup, self.cfg = drv, speedup, lidar_cfg or LidarConfig()
         self.viewer = mujoco.viewer.launch_passive(drv.model, drv.data)
@@ -78,6 +84,8 @@ class LiveView:
         self.viewer.sync()
         if self.show_camera and info.get("image") is not None:
             self._show_camera(info)
+        if self.dashboard is not None:
+            self.dashboard.update(info, true_pose, self.cfg, self.angles)
         wait = info["step"] * info["dt"] / self.speedup - (time.time() - self.t_start)
         if wait > 0:
             time.sleep(wait)
@@ -97,6 +105,10 @@ class LiveView:
         cv2.imshow("Robot camera", img)
         cv2.waitKey(1)
 
+    def finish(self, text, save_path=None):
+        if self.dashboard is not None:
+            self.dashboard.finish(text, save_path)
+
     def wait_until_closed(self):
         import cv2
 
@@ -104,6 +116,8 @@ class LiveView:
             self.viewer.sync()
             if self.show_camera:
                 cv2.waitKey(1)                     # keep the camera window responsive
+            if self.dashboard is not None:
+                self.dashboard.pump()
             time.sleep(0.05)
         if self.show_camera:
             cv2.destroyAllWindows()

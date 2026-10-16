@@ -211,7 +211,7 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
         log["est_pose"][step], log["est_cov"][step], log["wheel_omega"][step] = ekf.pose, ekf.pose_cov.ravel(), omega
         log["cmd"][step], log["mode"][step], log["contact"][step] = (v, w), MODES.index(mode), hit
         if on_step is not None and on_step(dict(step=step, dt=dt, mode=mode, est=ekf.pose.copy(), ranges=last_ranges, plan=waypoints,
-                                                    image=image, marker_corners=marker_corners)):
+                                                    image=image, marker_corners=marker_corners, grid=grid)):
             n_max = step + 1                                       # the caller asked to stop (for example the viewer was closed)
             break
         if mode == "hold" and hold_left <= 0:

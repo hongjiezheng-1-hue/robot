@@ -54,6 +54,7 @@ def main():
     ap.add_argument("--video-step", type=int, default=2, help="draw every n-th control step (0.1 s each)")
     ap.add_argument("--fps", type=int, default=15)
     ap.add_argument("--live", action="store_true", help="show the run live in the MuJoCo viewer (LiDAR beams, estimated pose, current plan)")
+    ap.add_argument("--no-dashboard", action="store_true", help="with --live: no 2D map and camera window, only the MuJoCo viewer")
     ap.add_argument("--speedup", type=float, default=1.0, help="with --live: simulated seconds per wall-clock second (1 = real time)")
     args = ap.parse_args()
     sys.stdout.reconfigure(line_buffering=True)
@@ -102,7 +103,7 @@ def main():
     if args.live:
         from sim.live_view import LiveView
 
-        live = LiveView(drv, speedup=args.speedup)
+        live = LiveView(drv, speedup=args.speedup, scene_cfg=scene_cfg, standoff=standoff, dock=dock, dashboard=not args.no_dashboard)
         on_step, viewer = live.on_step, live
     log = run_navigation(drv, scene_cfg, standoff, dock, LQRTracker(0.1), start, nominal, speed=args.speed, seed=args.seed,
                          on_step=on_step, lidar_cfg=LidarConfig(sigma_floor=0.01 * dist.lidar_noise_scale, sigma_rel=0.01 * dist.lidar_noise_scale),
@@ -142,6 +143,10 @@ def main():
         print(f"wrote {out / 'demo.mp4'} and {out / 'demo_overview.png'}")
     print(f"total {time.time() - t0:.0f} s")
     if viewer is not None:
+        verdict = "DOCKED" if ok else ("NO PATH" if m["failed"] else "NOT DOCKED")
+        viewer.finish(verdict if m["failed"] else f"{verdict}  along {1000 * m['dock_along']:.0f} mm, lateral {1000 * m['dock_lateral']:.0f} mm, "
+                      f"heading {m['dock_heading_deg']:.1f} deg", save_path=out / "live_dashboard.png")
+        print(f"wrote {out / 'live_dashboard.png'}")
         print("The viewer stays open; close its window to exit.")
         viewer.wait_until_closed()
     return 0 if ok else 1
