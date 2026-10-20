@@ -20,10 +20,13 @@ from perception.aruco import detect_markers  # noqa: E402
 from perception.lidar import LidarConfig, beam_angles, sensor_origin  # noqa: E402
 from perception.occupancy import OccupancyGrid  # noqa: E402
 from sim.navigation import MODES  # noqa: E402
+from sim.simple_navigation import MODES as SIMPLE_MODES  # noqa: E402
 
 MODE_TEXT = {"plan": "planning", "rotate": "turning towards the path", "follow": "following the path (LQR on the EKF estimate)",
              "align": "aligning with the marker normal", "dock": "docking along the marker normal", "hold": "docked",
-             "failed": "no path found", "search": "looking for the marker to correct the pose", "look": "searching for the marker before docking"}
+             "failed": "no path found", "search": "looking for the marker to correct the pose", "look": "searching for the marker before docking",
+             "go": "driving to the stand-off (reactive LiDAR avoidance)",
+             "turn": "turning to the final heading"}
 
 
 def _triangle(pose, size=0.14):
@@ -46,12 +49,15 @@ class _GridReplay:
         self.log, self.cfg = log, lidar_cfg
         self.events = sorted([(int(s), 0, i) for i, s in enumerate(log["scan_steps"])] + [(int(s), 1, -1) for s in log["map_reset_steps"]])
         self.pos, self.grid = 0, OccupancyGrid()
+        self.simple = str(log.get("pipeline", "full")) == "simple"
 
     def at(self, step):
         while self.pos < len(self.events) and self.events[self.pos][0] <= step:
             s, kind, i = self.events[self.pos]
             if kind == 1:
                 self.grid = OccupancyGrid()
+            elif self.simple:
+                pass                                       # the simple pipeline builds no map
             elif MODES[int(self.log["mode"][min(s, len(self.log["mode"]) - 1)])] not in ("dock", "hold"):
                 self.grid.update(self.log["scan_poses"][i], self.log["scan_ranges"][i], self.cfg)
             self.pos += 1
@@ -173,7 +179,9 @@ def render_video(log, scene_cfg, drv, out_path, step=2, fps=15, hold_seconds=3.0
             a = truth[k, 2] + angles[ok]
             ends = np.stack([ox + r[ok] * np.cos(a), oy + r[ok] * np.sin(a)], axis=1)
             beams.set_segments([[(ox, oy), tuple(e)] for e in ends])
-        m = int(np.searchsorted(log["replan_steps"], k, side="right")) - 1
+        if replay.simple and np.all(np.isfinite(log["ref"][k])):
+            plan_line.set_data([est[k, 0], log["ref"][k, 0]], [est[k, 1], log["ref"][k, 1]])
+        m = -1 if replay.simple else int(np.searchsorted(log["replan_steps"], k, side="right")) - 1
         if m >= 0:
             pts = log["replan_xy"][offsets[m]:offsets[m + 1]]
             plan_line.set_data(pts[:, 0], pts[:, 1])
@@ -187,7 +195,7 @@ def render_video(log, scene_cfg, drv, out_path, step=2, fps=15, hold_seconds=3.0
         ell.set_width(max(w_, 1e-3))
         ell.set_height(max(h_, 1e-3))
         ell.set_angle(ang)
-        mode = MODES[int(log["mode"][k])]
+        mode = (SIMPLE_MODES if replay.simple else MODES)[int(log["mode"][k])]
         title.set_text(f"{label}   t = {t[k]:5.1f} s   {MODE_TEXT[mode]}   |   EKF error {err_mm[k]:4.0f} mm, "
                        f"heading {np.degrees(abs(wrap(truth[k, 2] - est[k, 2]))):.1f} deg")
         cursor.set_xdata([t[k], t[k]])

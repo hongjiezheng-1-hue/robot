@@ -11,7 +11,9 @@ from matplotlib.transforms import Affine2D
 
 MODE_TEXT = {"plan": "planning", "rotate": "turning towards the path", "follow": "following the path (LQR on the EKF estimate)",
              "align": "aligning with the marker", "dock": "docking along the marker normal", "hold": "docked",
-             "failed": "no path found", "search": "looking for the marker", "look": "searching for the marker before docking"}
+             "failed": "no path found", "search": "looking for the marker", "look": "searching for the marker before docking",
+             "go": "driving to the stand-off (reactive LiDAR avoidance)",
+             "turn": "turning to the final heading"}
 
 
 class LiveDashboard:

@@ -478,6 +478,12 @@ Findings and the changes made:
 
 Limits: simulation only, one robot model, MuJoCo 3.3.7, 6 seeds per cell (a cell of 6/6 does not show a rate above about 60 percent with 95 percent confidence). The layouts are mine; nothing was tested on a layout drawn by someone else.
 
+## Stage 12: a simpler alternative pipeline without map or planner (MuJoCo 3.3.7, work in progress)
+
+`--pipeline simple` (`sim/simple_navigation.py`, `control/reactive.py`, `control/pbvs.py`): the same EKF (wheel odometry and marker pose), reactive LiDAR avoidance from the current scan only (drive at the goal while the corridor is free; when blocked, follow the obstacle on the side with the smaller detour until the way is free and the robot is closer than where it was blocked, a simple Bug algorithm), and position-based visual servoing to dock (polar state feedback v = k_rho rho, w = k_alpha alpha + k_beta beta, stable for k_rho > 0, k_beta < 0, k_alpha - k_rho > 0; then a final turn to the dock heading). No occupancy map and no path planning. The default remains `--pipeline full` (stages 10 and 11).
+
+Development (variant C, results in `results/scenarios/simple/`): a first version that steered to the freest direction got stuck in front of the chicane blocks (seeds 1400 to 1401); a second version with obstacle following docked in 38 of 54 runs (seeds 1500 to 1505) with 7 collisions on the S courses, where the robot reached the dock position with 9 to 27 degrees heading error and cut a board corner close to the stand-off. After adding the final heading turn and keeping the avoidance on near the stand-off, the third version (seeds 1600 to 1605) docked in 45 of 49 completed runs with no collision: all runs of the S course, its mirror, the chicane, the scattered boxes, the empty room and the facing-away start; 2 of 6 in the U-shaped pocket (dead end, the known weakness of reactive avoidance). The last 5 runs (gate and north station) were not completed. These seeds were used while changing the method, so they are development results, not an independent test.
+
 ## Open items
 
 - Confirm the robot (Burger or Waffle Pi) held by the hardware lab.

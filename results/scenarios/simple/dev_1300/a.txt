@@ -1,0 +1,10 @@
+MuJoCo 3.3.7 | variant C
+s_course       none       seed 1300: docked     72 s, 0 plans, 0 recoveries, clearance 164 mm, est RMSE 40 mm, dock -14/0 mm 0.9 deg
+s_course       none       seed 1301: docked     130 s, 0 plans, 0 recoveries, clearance 168 mm, est RMSE 48 mm, dock -14/0 mm -0.2 deg
+s_course       none       seed 1302: docked     136 s, 0 plans, 0 recoveries, clearance 168 mm, est RMSE 79 mm, dock -14/0 mm -0.5 deg
+s_course       none       seed 1303: docked     108 s, 0 plans, 0 recoveries, clearance 171 mm, est RMSE 81 mm, dock -14/-0 mm 1.2 deg
+s_course       none       seed 1304: docked     78 s, 0 plans, 0 recoveries, clearance 177 mm, est RMSE 43 mm, dock -14/0 mm 0.2 deg
+s_course       none       seed 1305: docked     74 s, 0 plans, 0 recoveries, clearance 176 mm, est RMSE 93 mm, dock -14/0 mm 0.3 deg
+s_mirrored     none       seed 1300: docked     72 s, 0 plans, 0 recoveries, clearance 190 mm, est RMSE 31 mm, dock -14/1 mm -2.0 deg
+s_mirrored     none       seed 1301: docked     83 s, 0 plans, 0 recoveries, clearance 181 mm, est RMSE 70 mm, dock -14/1 mm -1.5 deg
+s_mirrored     none       seed 1302: docked     70 s, 0 plans, 0 recoveries, clearance 178 mm, est RMSE 93 mm, dock -14/1 mm -2.3 deg

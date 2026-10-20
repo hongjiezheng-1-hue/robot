@@ -1,0 +1,21 @@
+MuJoCo 3.3.7 | variant C
+empty          none       seed 1600: docked     51 s, 0 plans, 0 recoveries, clearance 284 mm, est RMSE 25 mm, dock -7/0 mm -0.3 deg
+empty          none       seed 1601: docked     51 s, 0 plans, 0 recoveries, clearance 292 mm, est RMSE 45 mm, dock -7/0 mm 0.5 deg
+empty          none       seed 1602: docked     50 s, 0 plans, 0 recoveries, clearance 418 mm, est RMSE 30 mm, dock -5/0 mm 0.8 deg
+empty          none       seed 1603: docked     50 s, 0 plans, 0 recoveries, clearance 377 mm, est RMSE 39 mm, dock -6/0 mm 0.7 deg
+empty          none       seed 1604: docked     50 s, 0 plans, 0 recoveries, clearance 393 mm, est RMSE 33 mm, dock -5/0 mm -0.7 deg
+empty          none       seed 1605: docked     50 s, 0 plans, 0 recoveries, clearance 422 mm, est RMSE 34 mm, dock -5/0 mm 0.7 deg
+chicane        none       seed 1600: docked     63 s, 0 plans, 0 recoveries, clearance 248 mm, est RMSE 43 mm, dock -5/0 mm 0.1 deg
+chicane        none       seed 1601: docked     62 s, 0 plans, 0 recoveries, clearance 249 mm, est RMSE 99 mm, dock -7/-1 mm 0.8 deg
+chicane        none       seed 1602: docked     66 s, 0 plans, 0 recoveries, clearance 251 mm, est RMSE 30 mm, dock -5/0 mm -1.1 deg
+chicane        none       seed 1603: docked     63 s, 0 plans, 0 recoveries, clearance 248 mm, est RMSE 21 mm, dock -5/-0 mm 0.6 deg
+chicane        none       seed 1604: docked     68 s, 0 plans, 0 recoveries, clearance 249 mm, est RMSE 57 mm, dock -7/0 mm -0.8 deg
+chicane        none       seed 1605: docked     115 s, 0 plans, 0 recoveries, clearance 251 mm, est RMSE 117 mm, dock -6/0 mm 0.1 deg
+facing_away    none       seed 1600: docked     79 s, 0 plans, 0 recoveries, clearance 248 mm, est RMSE 82 mm, dock -5/-0 mm 0.9 deg
+facing_away    none       seed 1601: docked     126 s, 0 plans, 0 recoveries, clearance 243 mm, est RMSE 265 mm, dock -7/0 mm -0.3 deg
+facing_away    none       seed 1602: docked     124 s, 0 plans, 0 recoveries, clearance 249 mm, est RMSE 110 mm, dock -7/-0 mm 0.8 deg
+facing_away    none       seed 1603: docked     124 s, 0 plans, 0 recoveries, clearance 247 mm, est RMSE 108 mm, dock -6/-1 mm 0.8 deg
+facing_away    none       seed 1604: docked     128 s, 0 plans, 0 recoveries, clearance 252 mm, est RMSE 124 mm, dock -6/-0 mm 0.8 deg
+facing_away    none       seed 1605: docked     71 s, 0 plans, 0 recoveries, clearance 253 mm, est RMSE 112 mm, dock -7/-1 mm 0.9 deg
+
+total 18 runs: docked 18, collision 0, no_path 0, not_docked 0

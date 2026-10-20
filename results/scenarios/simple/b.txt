@@ -1,0 +1,17 @@
+MuJoCo 3.3.7 | variant C
+scattered      none       seed 1600: docked     50 s, 0 plans, 0 recoveries, clearance 284 mm, est RMSE 19 mm, dock -6/0 mm -0.8 deg
+scattered      none       seed 1601: docked     50 s, 0 plans, 0 recoveries, clearance 261 mm, est RMSE 41 mm, dock -5/0 mm 0.4 deg
+scattered      none       seed 1602: docked     49 s, 0 plans, 0 recoveries, clearance 309 mm, est RMSE 20 mm, dock -6/0 mm -0.3 deg
+scattered      none       seed 1603: docked     49 s, 0 plans, 0 recoveries, clearance 291 mm, est RMSE 29 mm, dock -5/0 mm -0.1 deg
+scattered      none       seed 1604: docked     51 s, 0 plans, 0 recoveries, clearance 278 mm, est RMSE 35 mm, dock -5/2 mm -0.9 deg
+scattered      none       seed 1605: docked     49 s, 0 plans, 0 recoveries, clearance 310 mm, est RMSE 25 mm, dock -6/0 mm -0.4 deg
+u_trap         none       seed 1600: not_docked 240 s, 0 plans, 0 recoveries, clearance 284 mm, est RMSE 97 mm, dock -1824/-122 mm -107.4 deg
+u_trap         none       seed 1601: docked     121 s, 0 plans, 0 recoveries, clearance 253 mm, est RMSE 190 mm, dock -6/-0 mm 0.7 deg
+u_trap         none       seed 1602: docked     239 s, 0 plans, 0 recoveries, clearance 248 mm, est RMSE 94 mm, dock -6/1 mm -1.0 deg
+u_trap         none       seed 1603: not_docked 240 s, 0 plans, 0 recoveries, clearance 332 mm, est RMSE 44 mm, dock -1836/127 mm 79.5 deg
+u_trap         none       seed 1604: not_docked 240 s, 0 plans, 0 recoveries, clearance 329 mm, est RMSE 38 mm, dock -1831/120 mm 90.5 deg
+u_trap         none       seed 1605: not_docked 240 s, 0 plans, 0 recoveries, clearance 329 mm, est RMSE 104 mm, dock -1830/130 mm 77.5 deg
+north_station  none       seed 1600: docked     120 s, 0 plans, 0 recoveries, clearance 254 mm, est RMSE 333 mm, dock -6/10 mm -1.7 deg
+F:\envs\robot\lib\site-packages\glfw\__init__.py:917: GLFWError: (65544) b'WGL: Failed to make context current: \xe6\x93\x8d\xe4\xbd\x9c\xe6\x88\x90\xe5\x8a\x9f\xe5\xae\x8c\xe6\x88\x90\xe3\x80\x82 '
+  warnings.warn(message, GLFWError)
+north_station  none       seed 1601: docked     59 s, 0 plans, 0 recoveries, clearance 250 mm, est RMSE 160 mm, dock -5/1 mm -1.0 deg

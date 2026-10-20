@@ -39,6 +39,7 @@ def outcome(m):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model-dir", required=True)
+    ap.add_argument("--pipeline", choices=("full", "simple"), default="full")
     ap.add_argument("--variant", choices=("table", "B", "C"), default="C")
     ap.add_argument("--scenarios", nargs="+", default=["s_course"], choices=list(SCENARIOS))
     ap.add_argument("--disturbances", nargs="+", default=["none"], choices=list(DISTURBANCES))
@@ -79,13 +80,22 @@ def main():
                 nominal = np.array(scen.start)
                 start = nominal + d.start_offset_scale * rng.normal(0.0, [0.05, 0.05, np.radians(3.0)])
                 lidar = LidarConfig(sigma_floor=0.01 * d.lidar_noise_scale, sigma_rel=0.01 * d.lidar_noise_scale)
-                log = run_navigation(drv, scene_cfg, standoff, dock, LQRTracker(0.1), start, nominal, speed=args.speed, seed=trial,
+                if args.pipeline == "simple":
+                    from sim.simple_navigation import run_simple
+
+                    log = run_simple(drv, scene_cfg, standoff, dock, start, nominal, go_speed=args.speed, seed=trial,
                                      lidar_cfg=lidar, wheel_radius=0.033 * (1 + d.wheel_radius_error), marker_dropout=d.marker_dropout,
                                      push=d.push or None, dock_spec=spec,
                                      slam_prior=None if args.marker_unknown is None else slam_prior_from_error(scen.station, args.marker_unknown),
                                      **models)
+                else:
+                    log = run_navigation(drv, scene_cfg, standoff, dock, LQRTracker(0.1), start, nominal, speed=args.speed, seed=trial,
+                                         lidar_cfg=lidar, wheel_radius=0.033 * (1 + d.wheel_radius_error), marker_dropout=d.marker_dropout,
+                                         push=d.push or None, dock_spec=spec,
+                                         slam_prior=None if args.marker_unknown is None else slam_prior_from_error(scen.station, args.marker_unknown),
+                                         **models)
                 m = navigation_metrics(log, scene_cfg, spec, dock)
-                row = dict(scenario=sname, disturbance=dname, variant=args.variant, marker_unknown=args.marker_unknown, seed=args.seed_base + trial, outcome=outcome(m),
+                row = dict(pipeline=args.pipeline, scenario=sname, disturbance=dname, variant=args.variant, marker_unknown=args.marker_unknown, seed=args.seed_base + trial, outcome=outcome(m),
                            seconds=m["seconds"], replans=m["replans"], recoveries=m["recoveries"], first_contact_s=m["first_contact_s"], collided=m["collided"], clearance=None if not np.isfinite(m["clearance"]) else m["clearance"],
                            est_rmse=None if not np.isfinite(m["est_pos_rmse"]) else m["est_pos_rmse"],
                            along=None if not np.isfinite(m["dock_along"]) else m["dock_along"],

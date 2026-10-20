@@ -1,0 +1,21 @@
+MuJoCo 3.3.7 | variant C
+empty          none       seed 1400: docked     50 s, 0 plans, 0 recoveries, clearance 338 mm, est RMSE 50 mm, dock -6/1 mm -1.4 deg
+empty          none       seed 1401: docked     50 s, 0 plans, 0 recoveries, clearance 352 mm, est RMSE 29 mm, dock -5/0 mm -1.3 deg
+empty          none       seed 1402: docked     51 s, 0 plans, 0 recoveries, clearance 279 mm, est RMSE 38 mm, dock -7/-0 mm 1.2 deg
+empty          none       seed 1403: docked     50 s, 0 plans, 0 recoveries, clearance 358 mm, est RMSE 22 mm, dock -5/0 mm -0.8 deg
+empty          none       seed 1404: docked     49 s, 0 plans, 0 recoveries, clearance 458 mm, est RMSE 29 mm, dock -6/-0 mm 0.9 deg
+empty          none       seed 1405: docked     51 s, 0 plans, 0 recoveries, clearance 290 mm, est RMSE 32 mm, dock -7/-0 mm 1.0 deg
+chicane        none       seed 1400: not_docked 240 s, 0 plans, 0 recoveries, clearance 250 mm, est RMSE 132 mm, dock -2434/790 mm 166.1 deg
+chicane        none       seed 1401: not_docked 240 s, 0 plans, 0 recoveries, clearance 246 mm, est RMSE 37 mm, dock -2363/686 mm -56.9 deg
+chicane        none       seed 1402: not_docked 240 s, 0 plans, 0 recoveries, clearance 254 mm, est RMSE 292 mm, dock -2357/668 mm -61.1 deg
+chicane        none       seed 1403: not_docked 240 s, 0 plans, 0 recoveries, clearance 250 mm, est RMSE 61 mm, dock -2482/617 mm -62.0 deg
+chicane        none       seed 1404: not_docked 240 s, 0 plans, 0 recoveries, clearance 253 mm, est RMSE 39 mm, dock -2374/797 mm 13.8 deg
+chicane        none       seed 1405: not_docked 240 s, 0 plans, 0 recoveries, clearance 253 mm, est RMSE 165 mm, dock -2316/625 mm -91.7 deg
+facing_away    none       seed 1400: docked     71 s, 0 plans, 0 recoveries, clearance 175 mm, est RMSE 93 mm, dock -5/-0 mm 0.8 deg
+facing_away    none       seed 1401: docked     71 s, 0 plans, 0 recoveries, clearance 164 mm, est RMSE 142 mm, dock -6/0 mm 0.9 deg
+facing_away    none       seed 1402: docked     71 s, 0 plans, 0 recoveries, clearance 180 mm, est RMSE 130 mm, dock -6/-0 mm 2.2 deg
+facing_away    none       seed 1403: docked     70 s, 0 plans, 0 recoveries, clearance 169 mm, est RMSE 149 mm, dock -6/-0 mm 1.3 deg
+facing_away    none       seed 1404: docked     69 s, 0 plans, 0 recoveries, clearance 173 mm, est RMSE 209 mm, dock -6/0 mm 0.8 deg
+facing_away    none       seed 1405: not_docked 69 s, 0 plans, 0 recoveries, clearance 249 mm, est RMSE 504 mm, dock 68/-709 mm -10.7 deg
+
+total 18 runs: docked 11, collision 0, no_path 0, not_docked 7

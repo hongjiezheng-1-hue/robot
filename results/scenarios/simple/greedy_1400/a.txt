@@ -1,0 +1,21 @@
+MuJoCo 3.3.7 | variant C
+s_course       none       seed 1400: docked     66 s, 0 plans, 0 recoveries, clearance 177 mm, est RMSE 104 mm, dock -6/0 mm 0.5 deg
+s_course       none       seed 1401: docked     69 s, 0 plans, 0 recoveries, clearance 174 mm, est RMSE 35 mm, dock -5/-0 mm 0.7 deg
+s_course       none       seed 1402: docked     71 s, 0 plans, 0 recoveries, clearance 162 mm, est RMSE 79 mm, dock -5/-0 mm 1.9 deg
+s_course       none       seed 1403: docked     67 s, 0 plans, 0 recoveries, clearance 170 mm, est RMSE 53 mm, dock -5/0 mm 0.4 deg
+s_course       none       seed 1404: docked     63 s, 0 plans, 0 recoveries, clearance 164 mm, est RMSE 123 mm, dock -7/-0 mm 2.1 deg
+s_course       none       seed 1405: docked     66 s, 0 plans, 0 recoveries, clearance 176 mm, est RMSE 167 mm, dock -6/0 mm 1.7 deg
+s_mirrored     none       seed 1400: docked     66 s, 0 plans, 0 recoveries, clearance 198 mm, est RMSE 112 mm, dock -6/1 mm -3.0 deg
+s_mirrored     none       seed 1401: docked     65 s, 0 plans, 0 recoveries, clearance 183 mm, est RMSE 19 mm, dock -5/1 mm -2.8 deg
+s_mirrored     none       seed 1402: docked     68 s, 0 plans, 0 recoveries, clearance 191 mm, est RMSE 113 mm, dock -5/0 mm -1.8 deg
+s_mirrored     none       seed 1403: docked     66 s, 0 plans, 0 recoveries, clearance 180 mm, est RMSE 19 mm, dock -6/1 mm -2.4 deg
+s_mirrored     none       seed 1404: docked     65 s, 0 plans, 0 recoveries, clearance 186 mm, est RMSE 75 mm, dock -7/1 mm -2.4 deg
+s_mirrored     none       seed 1405: collision  148 s, 0 plans, 0 recoveries, clearance 108 mm, est RMSE 312 mm, dock -6/1 mm -5.3 deg
+gate           none       seed 1400: docked     53 s, 0 plans, 0 recoveries, clearance 248 mm, est RMSE 65 mm, dock -6/1 mm -1.9 deg
+gate           none       seed 1401: docked     52 s, 0 plans, 0 recoveries, clearance 248 mm, est RMSE 18 mm, dock -6/1 mm -1.3 deg
+gate           none       seed 1402: docked     52 s, 0 plans, 0 recoveries, clearance 252 mm, est RMSE 51 mm, dock -5/0 mm -0.0 deg
+gate           none       seed 1403: docked     52 s, 0 plans, 0 recoveries, clearance 249 mm, est RMSE 17 mm, dock -7/0 mm -1.5 deg
+gate           none       seed 1404: docked     51 s, 0 plans, 0 recoveries, clearance 248 mm, est RMSE 51 mm, dock -7/0 mm -1.2 deg
+gate           none       seed 1405: docked     52 s, 0 plans, 0 recoveries, clearance 248 mm, est RMSE 61 mm, dock -7/0 mm -0.4 deg
+
+total 18 runs: docked 17, collision 1, no_path 0, not_docked 0

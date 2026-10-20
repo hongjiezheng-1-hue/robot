@@ -43,6 +43,9 @@ def find_model_dir(given):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--model-dir", help="folder robotis_tb3 of the MuJoCo Menagerie (default: search common places)")
+    ap.add_argument("--pipeline", choices=("full", "simple"), default="full",
+                    help="full (default): LiDAR occupancy map, A* re-planning and LQR path tracking; "
+                         "simple: EKF + reactive LiDAR avoidance + visual-servo docking, no map and no planner")
     ap.add_argument("--variant", choices=("C", "table", "B"), default="C",
                     help="odometry model: C = gain table x online correction (default), table = gain table, B = gains estimated online")
     ap.add_argument("--scenario", default="s_course", help="layout from sim/scenarios.py: s_course, s_mirrored, gate, scattered, u_trap, north_station, empty, chicane, facing_away")
@@ -79,7 +82,7 @@ def main():
     model_dir = find_model_dir(args.model_dir)
     out = pathlib.Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    print(f"MuJoCo {mujoco.__version__} | model folder {model_dir} | variant {args.variant} | seed {args.seed} | scenario {args.scenario} | disturbance {args.disturbance}")
+    print(f"MuJoCo {mujoco.__version__} | model folder {model_dir} | pipeline {args.pipeline} | variant {args.variant} | seed {args.seed} | scenario {args.scenario} | disturbance {args.disturbance}")
 
     if args.scenario not in SCENARIOS or args.disturbance not in DISTURBANCES:
         raise SystemExit(f"scenario must be one of {list(SCENARIOS)}, disturbance one of {list(DISTURBANCES)}")
@@ -116,18 +119,24 @@ def main():
         live = LiveView(drv, speedup=args.speedup, scene_cfg=scene_cfg, standoff=standoff, dock=dock, dashboard=not args.no_dashboard,
                         start_pose=nominal, show_truth=args.show_truth, spec=spec)
         on_step, viewer = live.on_step, live
-    log = run_navigation(drv, scene_cfg, standoff, dock, LQRTracker(0.1), start, nominal, speed=args.speed, seed=args.seed,
-                         on_step=on_step, lidar_cfg=LidarConfig(sigma_floor=0.01 * dist.lidar_noise_scale, sigma_rel=0.01 * dist.lidar_noise_scale),
-                         wheel_radius=0.033 * (1 + dist.wheel_radius_error), marker_dropout=dist.marker_dropout, push=dist.push or None,
-                         slam_prior=slam_prior, dock_spec=spec, **models)
+    common = dict(seed=args.seed, on_step=on_step,
+                  lidar_cfg=LidarConfig(sigma_floor=0.01 * dist.lidar_noise_scale, sigma_rel=0.01 * dist.lidar_noise_scale),
+                  wheel_radius=0.033 * (1 + dist.wheel_radius_error), marker_dropout=dist.marker_dropout, push=dist.push or None,
+                  slam_prior=slam_prior, dock_spec=spec, **models)
+    if args.pipeline == "simple":
+        from sim.simple_navigation import run_simple
+
+        log = run_simple(drv, scene_cfg, standoff, dock, start, nominal, go_speed=args.speed, **common)
+    else:
+        log = run_navigation(drv, scene_cfg, standoff, dock, LQRTracker(0.1), start, nominal, speed=args.speed, **common)
     if viewer is not None and not viewer.running():
         print("viewer closed before the run finished; stopping")
         return 2
     m = navigation_metrics(log, scene_cfg, spec, dock)
     ok = bool(m["docked"] and not m["collided"])
 
-    print(f"\nsimulated {m['seconds']:.0f} s in {time.time() - t1:.0f} s of computing; {m['replans']} plans, "
-          f"{len(log['map_reset_steps'])} map resets")
+    extra = "" if args.pipeline == "simple" else f"; {m['replans']} plans, {len(log['map_reset_steps'])} map resets"
+    print(f"\nsimulated {m['seconds']:.0f} s in {time.time() - t1:.0f} s of computing{extra}")
     print(f"contacts with boards, walls or station: {m['contact_steps']} steps ({'COLLISION' if m['collided'] else 'none'}); "
           f"closest approach to a board {1000 * m['clearance']:.0f} mm (centre distance)")
     if slam_prior is not None and np.all(np.isfinite(log["marker_est"])):
@@ -143,7 +152,7 @@ def main():
         print("RESULT: DOCKED within tolerance" if ok else "RESULT: outside tolerance or contact")
 
     np.savez(out / "demo_log.npz", **log)
-    summary = dict(variant=args.variant, scenario=args.scenario, disturbance=args.disturbance, seed=args.seed, speed=args.speed, success=ok, **m)
+    summary = dict(pipeline=args.pipeline, variant=args.variant, scenario=args.scenario, disturbance=args.disturbance, seed=args.seed, speed=args.speed, success=ok, **m)
     (out / "demo_summary.json").write_text(json.dumps(summary, indent=2, default=lambda o: o.item() if hasattr(o, "item") else str(o)))
     print(f"wrote {out / 'demo_log.npz'} and {out / 'demo_summary.json'}")
 
