@@ -60,6 +60,9 @@ def main():
     ap.add_argument("--video-step", type=int, default=2, help="draw every n-th control step (0.1 s each)")
     ap.add_argument("--fps", type=int, default=15)
     ap.add_argument("--live", action="store_true", help="show the run live in the MuJoCo viewer (LiDAR beams, estimated pose, current plan)")
+    ap.add_argument("--view", choices=("sensors", "map"), default="sensors",
+                    help="with --live: sensors (default) = LiDAR scan around the robot + camera; map = the map the robot builds, "
+                         "its plan and path")
     ap.add_argument("--show-truth", action="store_true", help="with --live: also draw the room, the true obstacles and the true path "
                                                                  "on the map (evaluation only; the robot does not know them)")
     ap.add_argument("--no-dashboard", action="store_true", help="with --live: no 2D map and camera window, only the MuJoCo viewer")
@@ -117,7 +120,7 @@ def main():
         from sim.live_view import LiveView
 
         live = LiveView(drv, speedup=args.speedup, scene_cfg=scene_cfg, standoff=standoff, dock=dock, dashboard=not args.no_dashboard,
-                        start_pose=nominal, show_truth=args.show_truth, spec=spec)
+                        start_pose=nominal, show_truth=args.show_truth, spec=spec, view=args.view)
         on_step, viewer = live.on_step, live
     common = dict(seed=args.seed, on_step=on_step,
                   lidar_cfg=LidarConfig(sigma_floor=0.01 * dist.lidar_noise_scale, sigma_rel=0.01 * dist.lidar_noise_scale),

@@ -153,3 +153,101 @@ class LiveDashboard:
 
     def pump(self):
         self.fig.canvas.flush_events()
+
+
+class SensorDashboard:
+    """What the robot senses, nothing else: the LiDAR scan around the robot and the camera image.
+
+    In short: the LiDAR panel is drawn in the robot's own frame (robot in the centre, facing up, rings every metre), so no
+    room coordinates are needed. On top of the scan: the next point the robot is heading for and where it believes the marker
+    is (both from the EKF estimate). The camera panel shows the image the ArUco detector gets, with the detected marker in green.
+    """
+
+    def __init__(self, scene_cfg, max_range=3.5, every=2):
+        import matplotlib
+
+        matplotlib.use("TkAgg")
+        import matplotlib.pyplot as plt
+        from matplotlib.patches import Circle, Polygon
+
+        self.plt, self.every = plt, every
+        plt.ion()
+        self.fig = plt.figure("Robot sensors: LiDAR and camera", figsize=(12.5, 6.2))
+        ax = self.fig.add_axes([0.04, 0.08, 0.42, 0.82])
+        self.ax_cam = self.fig.add_axes([0.5, 0.15, 0.48, 0.7])
+        self.ax = ax
+        for r in np.arange(1.0, max_range + 0.01, 1.0):
+            ax.add_patch(Circle((0, 0), r, fill=False, ec="0.75", lw=0.8, ls="--"))
+            ax.text(0.05, r + 0.03, f"{r:.0f} m", color="0.5", fontsize=8)
+        ax.add_patch(Polygon([[0, 0.17], [-0.12, -0.12], [0.12, -0.12]], closed=True, fc="tab:red", ec="k"))
+        (self.hits,) = ax.plot([], [], ".", c="tab:blue", ms=3, label="LiDAR returns")
+        (self.target,) = ax.plot([], [], "-", c="tab:purple", lw=1.5, label="heading for")
+        (self.marker,) = ax.plot([], [], "s", c="tab:green", ms=9, label="marker (estimate)")
+        ax.set_xlim(-max_range, max_range)
+        ax.set_ylim(-max_range, max_range)
+        ax.set_aspect("equal")
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title("LiDAR around the robot (robot in the centre, facing up)", fontsize=10)
+        ax.legend(loc="lower left", fontsize=8)
+        self.im_cam = self.ax_cam.imshow(np.zeros((scene_cfg.camera_height, scene_cfg.camera_width, 3), dtype=np.uint8))
+        self.ax_cam.axis("off")
+        self.cam_title = self.ax_cam.set_title("robot camera", fontsize=10)
+        self.title = self.fig.suptitle("", fontsize=11)
+        self.banner = self.fig.text(0.5, 0.03, "", ha="center", fontsize=13, weight="bold", color="white",
+                                    bbox=dict(boxstyle="round", fc="#2f6f3c", ec="none"), visible=False)
+        self.plt.show(block=False)
+
+    @staticmethod
+    def _to_view(est, xy):
+        """World point -> robot frame -> plot (right = robot's right, up = robot's forward)."""
+        dx, dy = xy[0] - est[0], xy[1] - est[1]
+        c, s = np.cos(est[2]), np.sin(est[2])
+        fwd, left = c * dx + s * dy, -s * dx + c * dy
+        return -left, fwd
+
+    def update(self, info, true_pose, lidar_cfg, angles):
+        k, est = info["step"], info["est"]
+        if k % self.every:
+            return
+        r = info.get("ranges")
+        if r is not None:
+            ok = np.isfinite(r)
+            fwd = lidar_cfg.mount[0] + r[ok] * np.cos(angles[ok])
+            left = r[ok] * np.sin(angles[ok])
+            self.hits.set_data(-left, fwd)
+        plan, m = info.get("plan"), info.get("marker_est")
+        if info["mode"] in ("align", "dock", "turn", "hold", "look") and m is not None:
+            from control.docking import DockSpec, dock_poses
+
+            plan = [dock_poses(m, DockSpec())[1][:2]]              # docking: heading for the dock pose in front of the marker
+        if plan:
+            px, py = self._to_view(est, plan[0])
+            self.target.set_data([0, px], [0, py])
+        if m is not None:
+            mx, my = self._to_view(est, m[:2])
+            self.marker.set_data([mx], [my])
+        img = info.get("image")
+        if img is not None:
+            img = img.copy()
+            corners = info.get("marker_corners")
+            if corners is not None:
+                import cv2
+
+                cv2.polylines(img, [np.asarray(corners, dtype=np.int32).reshape(-1, 1, 2)], True, (0, 255, 0), 3)
+            self.im_cam.set_data(img)
+            self.cam_title.set_text("robot camera: " + ("marker detected (green box)" if corners is not None else "no marker in view"))
+        self.title.set_text(f"t = {k * info['dt']:5.1f} s   {MODE_TEXT.get(info['mode'], info['mode'])}")
+        self.fig.canvas.draw_idle()
+        self.fig.canvas.flush_events()
+
+    def finish(self, text, save_path=None):
+        self.banner.set_text(text)
+        self.banner.set_visible(True)
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
+        if save_path is not None:
+            self.fig.savefig(save_path, dpi=110)
+
+    def pump(self):
+        self.fig.canvas.flush_events()

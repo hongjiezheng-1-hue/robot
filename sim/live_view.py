@@ -17,14 +17,17 @@ from perception.lidar import LidarConfig, beam_angles, sensor_origin
 
 class LiveView:
     def __init__(self, drv, speedup=1.0, lidar_cfg=None, show_camera=None, scene_cfg=None, standoff=None, dock=None, dashboard=True,
-                 start_pose=(0.0, 0.0, 0.0), show_truth=False, spec=None):
+                 start_pose=(0.0, 0.0, 0.0), show_truth=False, spec=None, view="sensors"):
         import mujoco.viewer
 
         self.dashboard = None
         if dashboard and scene_cfg is not None:
-            from sim.live_dashboard import LiveDashboard
+            from sim.live_dashboard import LiveDashboard, SensorDashboard
 
-            self.dashboard = LiveDashboard(scene_cfg, standoff, dock, start_pose=start_pose, show_truth=show_truth, spec=spec)
+            if view == "map":
+                self.dashboard = LiveDashboard(scene_cfg, standoff, dock, start_pose=start_pose, show_truth=show_truth, spec=spec)
+            else:
+                self.dashboard = SensorDashboard(scene_cfg)
         # the dashboard already shows the camera; the separate OpenCV camera window is used only without it
         self.show_camera = (self.dashboard is None) if show_camera is None else show_camera
 
