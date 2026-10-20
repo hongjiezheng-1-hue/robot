@@ -1,0 +1,1 @@
+{"scenario": "chicane", "disturbance": "none", "variant": "C", "marker_unknown": 0.3, "seed": 1200, "outcome": "docked", "seconds": 75.7, "replans": 8, "recoveries": 0, "first_contact_s": null, "collided": false, "clearance": 0.23716542048837005, "est_rmse": 0.14780275087977407, "along": 0.0019325329156214544, "lateral": 0.0013052035250746261, "heading": -0.0693883133598429}

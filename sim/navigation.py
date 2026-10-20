@@ -13,17 +13,17 @@ Phases: plan -> rotate -> follow -> (re-plan ...) -> align -> dock -> hold. The 
 
 import numpy as np
 
-from control.docking import dock_error
+from control.docking import DockSpec, dock_error, dock_poses
 from control.lqr_tracker import to_nominal, wheel_speeds
 from control.planner import path_blocked, plan_with_margins
 from control.reference import build_reference
-from estimation.ekf import MarkerEKF
+from estimation.ekf import MarkerEKF, MarkerSLAM
 from estimation.models import wrap
 from perception.lidar import LidarConfig, scan_mujoco
 from perception.occupancy import OccupancyGrid
 from sim.closed_loop import P0_START
 
-MODES = ("plan", "rotate", "follow", "align", "dock", "hold", "failed", "search")
+MODES = ("plan", "rotate", "follow", "align", "dock", "hold", "failed", "search", "look")
 
 
 def _valid_reference(grid, ref, radius, skip=0.35):
@@ -55,7 +55,9 @@ def contact_ids(model, base_body):
 
 def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0, gain_fn=None, estimate_scales=False, compensate=True,
                    lidar_cfg=None, speed=0.10, dock_speed=0.05, inflate=0.22, hard=0.17, max_seconds=240.0, hold_seconds=10.0, max_replans=40, map_reset_jump=0.10,
-                   meas_cov=None, noise=None, subpixel=True, seed=0, wheel_radius=0.033, track_nominal=0.288, grid_kwargs=None, on_step=None, marker_dropout=0.0, push=None, max_recoveries=3):
+                   meas_cov=None, noise=None, subpixel=True, seed=0, wheel_radius=0.033, track_nominal=0.288, grid_kwargs=None, on_step=None, marker_dropout=0.0, push=None, max_recoveries=3, slam_prior=None, dock_spec=None):
+    """slam_prior: None when the marker pose is known; otherwise (rough marker pose, its covariance). Then the marker pose is
+    estimated (EKF-SLAM) and the stand-off and dock poses follow the estimate instead of the given standoff and dock."""
     import mujoco
 
     from drivers.mujoco_tb3 import TICKS_PER_REV
@@ -75,8 +77,17 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
     for _ in range(int(0.5 / drv.control_dt)):
         drv.step(0.0, 0.0)
     pose0 = np.array(drv.true_pose())
-    ekf = MarkerEKF(np.asarray(belief0, dtype=float), P0_START, marker_world, wheel_radius, track_nominal,
-                    estimate_scales=estimate_scales, gain_fn=gain_fn, meas_cov=meas_cov, noise=noise)
+    if slam_prior is None:
+        ekf = MarkerEKF(np.asarray(belief0, dtype=float), P0_START, marker_world, wheel_radius, track_nominal,
+                        estimate_scales=estimate_scales, gain_fn=gain_fn, meas_cov=meas_cov, noise=noise)
+    else:
+        ekf = MarkerSLAM(np.asarray(belief0, dtype=float), P0_START, slam_prior[0], slam_prior[1], wheel_radius=wheel_radius,
+                         track_nominal=track_nominal, estimate_scales=estimate_scales, gain_fn=gain_fn, meas_cov=meas_cov, noise=noise)
+    spec = dock_spec or DockSpec()
+
+    def goal():
+        """(stand-off, dock): fixed when the marker is known, otherwise from the current marker estimate."""
+        return (standoff, dock) if slam_prior is None else dock_poses(ekf.marker, spec)
     rng = np.random.default_rng(seed)
     drop_rng = np.random.default_rng(seed + 12345)
     grid = OccupancyGrid(**(grid_kwargs or {}))
@@ -88,8 +99,9 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
     log["contact"] = np.zeros(n_max, dtype=bool)
     map_resets, force_scan, recoveries = [], False, 0
     search_start, last_update_step = 0, -10**9
+    look_start, looked, dock_length = 0, False, 0.0
     scans, replans = [], []                                        # (step, estimated pose, ranges), (step, waypoints)
-    standoff_xy = np.array(standoff[:2])
+    standoff_xy = np.array(goal()[0][:2])
 
     mode, ref, k, waypoints, hold_left, n_done = "plan", None, 0, None, int(hold_seconds / dt), 0
     last_ranges = None
@@ -106,10 +118,13 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
                 rest = np.stack([ref["x"][k::3], ref["y"][k::3]], axis=1)
                 if len(rest) >= 2 and path_blocked(grid, [tuple(p) for p in rest], hard):
                     mode = "plan"
+                elif np.linalg.norm(np.array(goal()[0][:2]) - standoff_xy) > 0.15:
+                    mode = "plan"                                  # the marker estimate moved the goal: plan again
 
         v = w = 0.0
         if mode == "plan":
             if step >= 2 * lidar_every:                            # a couple of scans first
+                standoff_xy = np.array(goal()[0][:2])
                 waypoints = plan_with_margins(grid, tuple(ekf.pose[:2]), tuple(standoff_xy), (inflate, 0.19, hard), relax_radius=hard)
                 since = map_resets[-1] if map_resets else -1
                 thrash = sum(1 for r in replans if r[0] > since and step - r[0] < 100) >= 12  # many plans within 10 s: map probably corrupted
@@ -121,12 +136,14 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
                     search_start, mode, waypoints = step, "search", None
                 elif waypoints is None or len(replans) >= max_replans:
                     mode = "failed"
+                elif len(waypoints) == 0:                          # already at the stand-off cell
+                    target_heading, mode, n_done = goal()[1][2], "align", 0
                 else:
                     replans.append((step, [tuple(ekf.pose[:2])] + waypoints))
                     first = np.arctan2(waypoints[0][1] - ekf.pose[1], waypoints[0][0] - ekf.pose[0])
                     target_heading, mode, n_done = first, "rotate", 0
         elif mode == "search":
-            bearing = np.arctan2(marker_world[1] - ekf.pose[1], marker_world[0] - ekf.pose[0])
+            bearing = np.arctan2(ekf.marker[1] - ekf.pose[1], ekf.marker[0] - ekf.pose[0])   # where the marker should be
             err = wrap(bearing - ekf.pose[2])
             w = float(np.clip(1.5 * err, -0.5, 0.5)) if abs(err) > np.radians(3.0) else 0.0
             corrected = last_update_step >= search_start and step - last_update_step >= 10     # marker seen, estimate settled
@@ -134,6 +151,16 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
                 grid = OccupancyGrid(**(grid_kwargs or {}))
                 map_resets.append(step)
                 force_scan, mode, w = True, "plan", 0.0
+        elif mode == "look":
+            # marker position not well known yet: sweep the camera around where the marker should be until it is seen
+            bearing = np.arctan2(ekf.marker[1] - ekf.pose[1], ekf.marker[0] - ekf.pose[0])
+            sweep = 0.8 * np.sin(2 * np.pi * (step - look_start) * dt / 12.0)
+            err = wrap(bearing + sweep - ekf.pose[2])
+            w = float(np.clip(1.5 * err, -0.5, 0.5))
+            if last_update_step >= look_start and step - last_update_step >= 10:
+                mode, w = "plan", 0.0                              # marker found: plan to the corrected stand-off
+            elif step - look_start > 250:
+                target_heading, mode, n_done, w = goal()[1][2], "align", 0, 0.0     # not found in 25 s: dock on the best guess
         elif mode in ("rotate", "align"):
             err = wrap(target_heading - ekf.pose[2])
             w = float(np.clip(1.5 * err, -0.5, 0.5))
@@ -146,19 +173,30 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
                 else:
                     # straight line along the dock heading, starting at the projection of the estimate onto the dock axis:
                     # a line from the estimate itself would be slanted and end with a heading error
-                    axis = np.array([np.cos(dock[2]), np.sin(dock[2])])
-                    foot = np.asarray(dock[:2]) + axis * float(axis @ (ekf.pose[:2] - np.asarray(dock[:2])))
-                    ref = build_reference(tuple(foot), [tuple(dock[:2])], dock_speed, 0.3, dt)
+                    dock_now = goal()[1]
+                    axis = np.array([np.cos(dock_now[2]), np.sin(dock_now[2])])
+                    foot = np.asarray(dock_now[:2]) + axis * float(axis @ (ekf.pose[:2] - np.asarray(dock_now[:2])))
+                    ref = build_reference(tuple(foot), [tuple(dock_now[:2])], dock_speed, 0.3, dt)
+                    dock_length = float(np.linalg.norm(np.asarray(dock_now[:2]) - foot))
                     mode, k = "dock", 0
         elif mode in ("follow", "dock"):
             if k < len(ref["x"]):
                 r = {key: ref[key][k] for key in ("x", "y", "theta", "v", "w")}
+                if mode == "dock" and slam_prior is not None:
+                    # the dock pose follows the marker estimate, which keeps improving on the way in
+                    d_now = goal()[1]
+                    a_now = np.array([np.cos(d_now[2]), np.sin(d_now[2])])
+                    p_now = np.asarray(d_now[:2]) - a_now * (dock_length - min(k * dock_speed * dt, dock_length))
+                    r.update(x=p_now[0], y=p_now[1], theta=d_now[2])
                 v, w, _ = tracker.command(ekf.pose, r)             # estimated pose only
                 log["ref"][step] = (r["x"], r["y"], r["theta"])
                 k += 1
             elif mode == "follow":
-                if np.linalg.norm(ekf.pose[:2] - standoff_xy) < 0.15:
-                    target_heading, mode, n_done = dock[2], "align", 0
+                if np.linalg.norm(ekf.pose[:2] - np.array(goal()[0][:2])) < 0.15:
+                    if slam_prior is not None and np.sqrt(np.trace(ekf.marker_cov[:2, :2])) > 0.05 and not looked:
+                        mode, look_start, looked = "look", step, True
+                    else:
+                        target_heading, mode, n_done = goal()[1][2], "align", 0
                 else:
                     mode = "plan"
             else:
@@ -211,7 +249,8 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
         log["est_pose"][step], log["est_cov"][step], log["wheel_omega"][step] = ekf.pose, ekf.pose_cov.ravel(), omega
         log["cmd"][step], log["mode"][step], log["contact"][step] = (v, w), MODES.index(mode), hit
         if on_step is not None and on_step(dict(step=step, dt=dt, mode=mode, est=ekf.pose.copy(), ranges=last_ranges, plan=waypoints,
-                                                    image=image, marker_corners=marker_corners, grid=grid)):
+                                                    image=image, marker_corners=marker_corners, grid=grid,
+                                                    marker_est=ekf.marker.copy())):
             n_max = step + 1                                       # the caller asked to stop (for example the viewer was closed)
             break
         if mode == "hold" and hold_left <= 0:
@@ -220,13 +259,23 @@ def run_navigation(drv, scene_cfg, standoff, dock, tracker, start_pose, belief0,
 
     out = {key: val[:n_max] for key, val in log.items()}
     out["est_cov"] = out["est_cov"].reshape(n_max, 3, 3)
-    out.update(dt=dt, pose0=pose0, marker_world=marker_world, standoff=np.array(standoff), dock=np.array(dock),
+    out.update(dt=dt, pose0=pose0, marker_world=marker_world, standoff=np.array(goal()[0]), dock=np.array(goal()[1]), marker_est=np.array(ekf.marker), slam=slam_prior is not None,
                logodds=grid.logodds, grid_origin=np.array([grid.x0, grid.y0, grid.res]),
                scan_steps=np.array([s[0] for s in scans]), scan_poses=np.array([s[1] for s in scans]),
                scan_ranges=np.array([s[2] for s in scans]), replan_steps=np.array([r[0] for r in replans]), replan_len=np.array([len(r[1]) for r in replans], dtype=int),
                replan_xy=np.array([pt for r in replans for pt in r[1]]).reshape(-1, 2),
                failed=(MODES[out["mode"][-1]] == "failed"), n_replans=len(replans), n_recoveries=recoveries, n_steps=n_max, map_reset_steps=np.array(map_resets, dtype=int))
     return out
+
+
+def slam_prior_from_error(marker_true, error):
+    """Rough marker guess (as from a floor plan) that is `error` metres off, partly across and partly along the marker normal,
+    and 10 degrees off per 0.3 m, with a deliberately large uncertainty (0.5 m, 20 degrees)."""
+    mx, my, psi = marker_true
+    n = np.array([np.cos(psi), np.sin(psi)])
+    t = np.array([-n[1], n[0]])
+    guess = np.array([mx, my, psi]) + np.concatenate([error * (0.5 * n + 0.87 * t), [np.radians(10.0) * error / 0.3]])
+    return guess, np.diag([0.5**2, 0.5**2, np.radians(20.0) ** 2])
 
 
 def box_clearance(truth_xy, boxes, wall_half):

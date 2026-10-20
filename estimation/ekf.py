@@ -97,6 +97,13 @@ class MarkerEKF:
         return self.P[:3, :3]
 
     def predict(self, w_left, w_right, dt):
+        x_new, F, Q = self._robot_step(w_left, w_right, dt)
+        n = len(x_new)
+        self.x[:n] = x_new
+        self.P = F @ self.P @ F.T + Q
+
+    def _robot_step(self, w_left, w_right, dt):
+        """Predicted robot part of the state (pose, and gains if estimated) with its Jacobian and process noise."""
         v_nom, w_nom = encoders_to_vw(w_left, w_right, self.r, self.b)
         base_v, base_w = self.gain_fn(v_nom, w_nom) if self.gain_fn is not None else (1.0, 1.0)
         if self.estimate_scales:        # the state holds multiplicative corrections on the table gains (or on 1 without a table)
@@ -122,8 +129,9 @@ class MarkerEKF:
             Q[3:, 3:] = np.eye(2) * self.scale_step_sigma**2
         else:
             F, Q = F3, Q3
-        self.x[:3] = f_unicycle(pose, u, dt)
-        self.P = F @ self.P @ F.T + Q
+        x_new = self.x[:len(F)].copy()
+        x_new[:3] = f_unicycle(pose, u, dt)
+        return x_new, F, Q
 
     def update(self, z, R=None):
         """Marker pose update. Returns True if the measurement was used."""
@@ -145,4 +153,61 @@ class MarkerEKF:
         self.x[2] = wrap(self.x[2])
         IKH = np.eye(n) - K @ H
         self.P = IKH @ self.P @ IKH.T + K @ R @ K.T
+        return True
+
+
+class MarkerSLAM(MarkerEKF):
+    """EKF-SLAM with one landmark: the marker pose is part of the state instead of being known.
+
+    In short: the robot does not need to know where the marker is. It starts from a rough guess (for example from a floor plan)
+    with a large uncertainty; every marker measurement then corrects both the robot pose and the marker pose. Coordinates are
+    relative to the start mark, so no absolute position is needed either.
+
+    State: [px, py, theta, (s_v, s_w if estimated), mx, my, psi].
+    """
+
+    def __init__(self, x0, P0, marker_prior, marker_prior_cov, **kwargs):
+        super().__init__(x0, P0, marker_prior, **kwargs)
+        self.n_r = len(self.x)
+        self.x = np.concatenate([self.x, np.asarray(marker_prior, dtype=float)])
+        P = np.zeros((self.n_r + 3, self.n_r + 3))
+        P[:self.n_r, :self.n_r] = self.P
+        P[self.n_r:, self.n_r:] = np.asarray(marker_prior_cov, dtype=float)
+        self.P = P
+        self.marker = self.x[self.n_r:].copy()
+
+    @property
+    def marker_cov(self):
+        return self.P[self.n_r:, self.n_r:]
+
+    def predict(self, w_left, w_right, dt):
+        x_r, F_r, Q_r = self._robot_step(w_left, w_right, dt)
+        n = len(self.x)
+        F, Q = np.eye(n), np.zeros((n, n))
+        F[:self.n_r, :self.n_r], Q[:self.n_r, :self.n_r] = F_r, Q_r      # the marker does not move
+        self.x[:self.n_r] = x_r
+        self.P = F @ self.P @ F.T + Q
+
+    def update(self, z, R=None):
+        pose, marker = self.x[:3], self.x[self.n_r:]
+        zhat = h_marker_pose(pose, marker)
+        n = len(self.x)
+        c, s = np.cos(pose[2]), np.sin(pose[2])
+        H = np.zeros((3, n))
+        H[:, :3] = H_marker_pose(pose, marker)
+        H[:, self.n_r:] = np.array([[c, s, 0.0], [-s, c, 0.0], [0.0, 0.0, 1.0]])   # derivative with respect to the marker pose
+        y = np.asarray(z, dtype=float) - zhat
+        y[2] = wrap(y[2])
+        if R is None:
+            R = self.meas_cov(z) if self.meas_cov is not None else marker_measurement_cov(np.hypot(z[0], z[1]))
+        S = H @ self.P @ H.T + R
+        if self.gate is not None and float(y @ np.linalg.solve(S, y)) > self.gate:
+            return False
+        K = self.P @ H.T @ np.linalg.inv(S)
+        self.x = self.x + K @ y
+        self.x[2] = wrap(self.x[2])
+        self.x[self.n_r + 2] = wrap(self.x[self.n_r + 2])
+        IKH = np.eye(n) - K @ H
+        self.P = IKH @ self.P @ IKH.T + K @ R @ K.T
+        self.marker = self.x[self.n_r:].copy()
         return True

@@ -1,0 +1,10 @@
+MuJoCo 3.3.7 | variant C
+chicane        none       seed 1200: docked     76 s, 8 plans, 0 recoveries, clearance 237 mm, est RMSE 148 mm, dock 2/1 mm -0.1 deg
+Traceback (most recent call last):
+  File "C:\Users\g1669\Documents\robot\experiments\scenario_suite.py", line 108, in <module>
+    main()
+  File "C:\Users\g1669\Documents\robot\experiments\scenario_suite.py", line 82, in main
+    log = run_navigation(drv, scene_cfg, standoff, dock, LQRTracker(0.1), start, nominal, speed=args.speed, seed=trial,
+  File "C:\Users\g1669\Documents\robot\sim\navigation.py", line 141, in run_navigation
+    first = np.arctan2(waypoints[0][1] - ekf.pose[1], waypoints[0][0] - ekf.pose[0])
+IndexError: list index out of range

@@ -1,0 +1,1 @@
+{"scenario": "facing_away", "disturbance": "none", "variant": "C", "marker_unknown": 0.3, "seed": 1200, "outcome": "docked", "seconds": 81.4, "replans": 5, "recoveries": 0, "first_contact_s": null, "collided": false, "clearance": 0.20192377494926392, "est_rmse": 0.234188810245385, "along": 0.0018310957734140043, "lateral": 0.002440304707513151, "heading": -0.30802203018101787}

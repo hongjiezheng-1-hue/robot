@@ -1,0 +1,9 @@
+MuJoCo 3.3.7 | variant C
+chicane        none       seed 1100: docked     77 s, 10 plans, 0 recoveries, clearance 207 mm, est RMSE 231 mm, dock 2/3 mm -0.3 deg
+chicane        none       seed 1101: docked     76 s, 9 plans, 0 recoveries, clearance 184 mm, est RMSE 224 mm, dock 3/2 mm -0.2 deg
+chicane        none       seed 1102: docked     71 s, 7 plans, 0 recoveries, clearance 186 mm, est RMSE 172 mm, dock 1/3 mm -0.5 deg
+chicane        none       seed 1103: docked     70 s, 7 plans, 0 recoveries, clearance 215 mm, est RMSE 224 mm, dock 0/2 mm -0.3 deg
+chicane        none       seed 1104: docked     73 s, 6 plans, 0 recoveries, clearance 209 mm, est RMSE 96 mm, dock 3/-2 mm 0.6 deg
+chicane        none       seed 1105: docked     74 s, 7 plans, 0 recoveries, clearance 247 mm, est RMSE 144 mm, dock 1/1 mm 0.1 deg
+
+total 6 runs: docked 6, collision 0, no_path 0, not_docked 0

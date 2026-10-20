@@ -47,6 +47,9 @@ def main():
                     help="odometry model: C = gain table x online correction (default), table = gain table, B = gains estimated online")
     ap.add_argument("--scenario", default="s_course", help="layout from sim/scenarios.py: s_course, s_mirrored, gate, scattered, u_trap, north_station, empty, chicane, facing_away")
     ap.add_argument("--disturbance", default="none", help="none, lidar_x3, start_x3, dropout50, radius+5, push (see sim/scenarios.py)")
+    ap.add_argument("--marker-unknown", type=float, default=None, metavar="ERROR_M",
+                    help="do not give the robot the marker position: start from a rough guess this many metres off and estimate "
+                         "the marker with EKF-SLAM (for example 0.3)")
     ap.add_argument("--seed", type=int, default=401, help="seed of the random start offset and sensor noise")
     ap.add_argument("--speed", type=float, default=0.10, help="path-following speed [m/s]")
     ap.add_argument("--out-dir", default="demo_output")
@@ -54,6 +57,8 @@ def main():
     ap.add_argument("--video-step", type=int, default=2, help="draw every n-th control step (0.1 s each)")
     ap.add_argument("--fps", type=int, default=15)
     ap.add_argument("--live", action="store_true", help="show the run live in the MuJoCo viewer (LiDAR beams, estimated pose, current plan)")
+    ap.add_argument("--show-truth", action="store_true", help="with --live: also draw the room, the true obstacles and the true path "
+                                                                 "on the map (evaluation only; the robot does not know them)")
     ap.add_argument("--no-dashboard", action="store_true", help="with --live: no 2D map and camera window, only the MuJoCo viewer")
     ap.add_argument("--speedup", type=float, default=1.0, help="with --live: simulated seconds per wall-clock second (1 = real time)")
     args = ap.parse_args()
@@ -67,7 +72,7 @@ def main():
     from perception.lidar import LidarConfig
     from sim.scenarios import DISTURBANCES, SCENARIOS
     from sim.mujoco_run import RunConfig, calibrate_gain_table, pick_texture_type
-    from sim.navigation import navigation_metrics, run_navigation
+    from sim.navigation import navigation_metrics, run_navigation, slam_prior_from_error
     from sim.scene import SceneConfig, write_scene
 
     t0 = time.time()
@@ -98,16 +103,23 @@ def main():
     start = nominal + dist.start_offset_scale * rng.normal(0.0, [0.05, 0.05, np.radians(3.0)])
     print(f"[2/3] navigating: the robot believes it starts at {np.round(nominal, 2)}, it really starts at {np.round(start, 2)}; "
           f"stand-off {np.round(standoff[:2], 2)}, dock {np.round(dock[:2], 2)}", flush=True)
+    slam_prior = None
+    if args.marker_unknown is not None:
+        slam_prior = slam_prior_from_error(scen.station, args.marker_unknown)
+        print(f"marker position NOT given: the robot starts from a guess {np.round(slam_prior[0], 2)} "
+              f"(true {np.round(scen.station, 2)}) and estimates it (EKF-SLAM)", flush=True)
     t1 = time.time()
     on_step, viewer = None, None
     if args.live:
         from sim.live_view import LiveView
 
-        live = LiveView(drv, speedup=args.speedup, scene_cfg=scene_cfg, standoff=standoff, dock=dock, dashboard=not args.no_dashboard)
+        live = LiveView(drv, speedup=args.speedup, scene_cfg=scene_cfg, standoff=standoff, dock=dock, dashboard=not args.no_dashboard,
+                        start_pose=nominal, show_truth=args.show_truth, spec=spec)
         on_step, viewer = live.on_step, live
     log = run_navigation(drv, scene_cfg, standoff, dock, LQRTracker(0.1), start, nominal, speed=args.speed, seed=args.seed,
                          on_step=on_step, lidar_cfg=LidarConfig(sigma_floor=0.01 * dist.lidar_noise_scale, sigma_rel=0.01 * dist.lidar_noise_scale),
-                         wheel_radius=0.033 * (1 + dist.wheel_radius_error), marker_dropout=dist.marker_dropout, push=dist.push or None, **models)
+                         wheel_radius=0.033 * (1 + dist.wheel_radius_error), marker_dropout=dist.marker_dropout, push=dist.push or None,
+                         slam_prior=slam_prior, dock_spec=spec, **models)
     if viewer is not None and not viewer.running():
         print("viewer closed before the run finished; stopping")
         return 2
@@ -118,6 +130,10 @@ def main():
           f"{len(log['map_reset_steps'])} map resets")
     print(f"contacts with boards, walls or station: {m['contact_steps']} steps ({'COLLISION' if m['collided'] else 'none'}); "
           f"closest approach to a board {1000 * m['clearance']:.0f} mm (centre distance)")
+    if slam_prior is not None and np.all(np.isfinite(log["marker_est"])):
+        me = log["marker_est"] - np.asarray(scen.station)
+        print(f"marker estimate at the end: {1000 * np.hypot(me[0], me[1]):.0f} mm and {np.degrees(abs((me[2] + np.pi) % (2 * np.pi) - np.pi)):.1f} deg "
+              f"from the true marker (the guess was {1000 * args.marker_unknown:.0f} mm off)")
     if m["failed"]:
         print("RESULT: no path to the stand-off pose was found")
     else:

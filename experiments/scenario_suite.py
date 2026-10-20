@@ -23,7 +23,7 @@ from control.lqr_tracker import LQRTracker  # noqa: E402
 from drivers.mujoco_tb3 import MujocoTB3Driver  # noqa: E402
 from perception.lidar import LidarConfig  # noqa: E402
 from sim.mujoco_run import RunConfig, calibrate_gain_table, pick_texture_type  # noqa: E402
-from sim.navigation import navigation_metrics, run_navigation  # noqa: E402
+from sim.navigation import navigation_metrics, run_navigation, slam_prior_from_error  # noqa: E402
 from sim.scenarios import DISTURBANCES, SCENARIOS  # noqa: E402
 from sim.scene import SceneConfig, write_scene  # noqa: E402
 
@@ -45,6 +45,7 @@ def main():
     ap.add_argument("--trials", type=int, default=6)
     ap.add_argument("--seed-base", type=int, default=500)
     ap.add_argument("--speed", type=float, default=0.10)
+    ap.add_argument("--marker-unknown", type=float, default=None, help="marker guess error [m]; estimate the marker (EKF-SLAM)")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
     sys.stdout.reconfigure(line_buffering=True)
@@ -80,9 +81,11 @@ def main():
                 lidar = LidarConfig(sigma_floor=0.01 * d.lidar_noise_scale, sigma_rel=0.01 * d.lidar_noise_scale)
                 log = run_navigation(drv, scene_cfg, standoff, dock, LQRTracker(0.1), start, nominal, speed=args.speed, seed=trial,
                                      lidar_cfg=lidar, wheel_radius=0.033 * (1 + d.wheel_radius_error), marker_dropout=d.marker_dropout,
-                                     push=d.push or None, **models)
+                                     push=d.push or None, dock_spec=spec,
+                                     slam_prior=None if args.marker_unknown is None else slam_prior_from_error(scen.station, args.marker_unknown),
+                                     **models)
                 m = navigation_metrics(log, scene_cfg, spec, dock)
-                row = dict(scenario=sname, disturbance=dname, variant=args.variant, seed=args.seed_base + trial, outcome=outcome(m),
+                row = dict(scenario=sname, disturbance=dname, variant=args.variant, marker_unknown=args.marker_unknown, seed=args.seed_base + trial, outcome=outcome(m),
                            seconds=m["seconds"], replans=m["replans"], recoveries=m["recoveries"], first_contact_s=m["first_contact_s"], collided=m["collided"], clearance=None if not np.isfinite(m["clearance"]) else m["clearance"],
                            est_rmse=None if not np.isfinite(m["est_pos_rmse"]) else m["est_pos_rmse"],
                            along=None if not np.isfinite(m["dock_along"]) else m["dock_along"],

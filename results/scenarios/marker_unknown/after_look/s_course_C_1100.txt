@@ -1,0 +1,9 @@
+MuJoCo 3.3.7 | variant C
+s_course       none       seed 1100: docked     89 s, 8 plans, 0 recoveries, clearance 197 mm, est RMSE 144 mm, dock 4/-1 mm 0.3 deg
+s_course       none       seed 1101: docked     75 s, 4 plans, 0 recoveries, clearance 236 mm, est RMSE 127 mm, dock 3/-4 mm 1.0 deg
+s_course       none       seed 1102: docked     73 s, 4 plans, 0 recoveries, clearance 202 mm, est RMSE 121 mm, dock 2/1 mm 0.1 deg
+s_course       none       seed 1103: docked     78 s, 5 plans, 0 recoveries, clearance 216 mm, est RMSE 142 mm, dock 3/-5 mm 1.1 deg
+s_course       none       seed 1104: docked     82 s, 7 plans, 0 recoveries, clearance 177 mm, est RMSE 131 mm, dock 3/4 mm -0.6 deg
+s_course       none       seed 1105: docked     74 s, 4 plans, 0 recoveries, clearance 203 mm, est RMSE 152 mm, dock 2/-2 mm 0.6 deg
+
+total 6 runs: docked 6, collision 0, no_path 0, not_docked 0
