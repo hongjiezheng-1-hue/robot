@@ -478,6 +478,14 @@ Findings and the changes made:
 
 Limits: simulation only, one robot model, MuJoCo 3.3.7, 6 seeds per cell (a cell of 6/6 does not show a rate above about 60 percent with 95 percent confidence). The layouts are mine; nothing was tested on a layout drawn by someone else.
 
+### Stage 11b: marker position not given (EKF-SLAM with one landmark)
+
+Setup: `--marker-unknown 0.3` (`estimation/ekf.py` `MarkerSLAM`, `sim/navigation.py`). The robot starts from a guess of the marker pose that is 0.3 m and 10 degrees off, with an uncertainty of 0.5 m and 20 degrees, and estimates the marker together with its own pose; the stand-off and dock poses follow the estimate. Coordinates are relative to the start mark, so no absolute position is needed. Results in `results/scenarios/marker_unknown/`, variant C, layouts s_course, chicane and facing_away.
+
+- First version (seeds 1100 to 1105): 10 of 18 docked. In the failures the marker was never seen: the guessed approach line kept it outside the camera view. Fix: if the marker estimate is still uncertain at the stand-off, sweep the camera around the expected bearing until it is seen, re-plan to the corrected stand-off, and let the dock target follow the estimate during the final approach. One crash (an empty path when the robot was already at the stand-off) was also fixed.
+- After the fix, the same seeds: 18 of 18 docked (development). Fresh seeds 1200 to 1205: 16 of 16 completed runs docked with no collision; two runs (s_course and facing_away, seed 1205) were not completed because the session ended.
+- At the end the absolute marker estimate can still be off by tens of centimetres while the dock is accurate: docking only needs the pose of the robot relative to the marker, which the camera measures directly.
+
 ## Stage 12: a simpler alternative pipeline without map or planner (MuJoCo 3.3.7, work in progress)
 
 `--pipeline simple` (`sim/simple_navigation.py`, `control/reactive.py`, `control/pbvs.py`): the same EKF (wheel odometry and marker pose), reactive LiDAR avoidance from the current scan only (drive at the goal while the corridor is free; when blocked, follow the obstacle on the side with the smaller detour until the way is free and the robot is closer than where it was blocked, a simple Bug algorithm), and position-based visual servoing to dock (polar state feedback v = k_rho rho, w = k_alpha alpha + k_beta beta, stable for k_rho > 0, k_beta < 0, k_alpha - k_rho > 0; then a final turn to the dock heading). No occupancy map and no path planning. The default remains `--pipeline full` (stages 10 and 11).
