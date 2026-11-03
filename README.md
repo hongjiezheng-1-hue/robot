@@ -6,6 +6,17 @@ A TurtleBot3 with a 2D LiDAR and a camera in MuJoCo navigates a room with obstac
 
 *A logged run on the simulated robot. Black: true path. Red: EKF estimate (dotted ellipse: its 2-sigma position uncertainty). Blue dashed: odometry only. Green shading in the error plot: the marker is in view.*
 
+## Demo video
+
+**Video:** _link to be added_ (5 minutes: the live run, then modelling, sensing, estimation, control and robustness).
+
+## Key results (simulation, MuJoCo 3.3.7)
+
+- **Navigation and docking:** seven room layouts with obstacles the robot does not know, six random start offsets each, three rounds: **126 of 126 runs docked with no collision**. In the last round every docked run ended within 12 mm along-track, 25 mm lateral and 4.9 degrees of the dock pose ([findings](docs/findings.md), stage 11).
+- **Robustness:** with three times the LiDAR noise, three times the start offset, half of the camera frames lost, a 5 percent wheel-radius error or a push the encoders cannot see, **26 of 30 docked** on fresh seeds. The failures happen when the marker is out of view for a long time and the pose drifts.
+- **Marker position not given:** the marker pose can be estimated together with the robot pose (one-landmark EKF-SLAM); 16 of 16 completed runs on fresh seeds docked (stage 11b).
+- **Honest limits:** simulation only; the filters are overconfident on simulator data (ANEES at least 17 against an ideal 3); the dock tolerance and the LiDAR parameters are provisional; the layouts are my own.
+
 ## Status
 
 | Part | State |
@@ -13,10 +24,11 @@ A TurtleBot3 with a 2D LiDAR and a camera in MuJoCo navigates a room with obstac
 | State-space model, observability and controllability analysis | Done, checked numerically ([docs/findings.md](docs/findings.md), stage 1) |
 | Driver layer (wheel-speed loop on the simulated motors, encoders) | Done and validated in MuJoCo |
 | Scene (room, obstacles, ArUco station), camera, marker pose from corners | Done and validated in MuJoCo |
-| EKF with fixed odometry gains (A) and gains estimated online (B) | Done; validated on synthetic and MuJoCo data. The filters are still overconfident on MuJoCo data (see findings) |
-| LQR tracker, LiDAR obstacle avoidance (unknown S-shaped board course), docking at the marker | Working in simulation with the EKF in the loop; see findings stages 9 to 11 for the numbers and the limits (own layouts, simulation only, provisional dock tolerance, LiDAR parameters not checked against the real sensor) |
-| Hardware | Not started (the lab was not open to external use this week) |
-| `main.py` (single-command demonstration with video) | Done: `python main.py --model-dir robotis_mujoco_menagerie/robotis_tb3` |
+| EKF with fixed odometry gains, gains estimated online, or both; EKF-SLAM when the marker position is unknown | Done; validated on synthetic and MuJoCo data. The filters are overconfident on MuJoCo data (see findings) |
+| LiDAR occupancy map, A* re-planning, LQR tracker, docking at the marker | Working in simulation with the EKF in the loop (stages 9 to 11, 11b) |
+| Alternative without map or planner: reactive LiDAR avoidance and visual-servo (PBVS) docking | `--pipeline simple`; development results only (stage 12); a dead end can trap it |
+| Hardware | Not attempted (optional for this assessment) |
+| `main.py` (single-command demonstration) | Done: `python main.py --live` |
 
 ## Repository layout
 
@@ -50,13 +62,14 @@ git clone --depth 1 --filter=blob:none --sparse https://github.com/ROBOTIS-GIT/r
 git -C robotis_mujoco_menagerie sparse-checkout set robotis_tb3
 ```
 
-Run the demonstration (one command, about 1.5 minutes; writes `demo_output/demo.mp4`, an overview image, the run log and a summary):
+Run the demonstration (one command, about 1 to 1.5 minutes; writes `demo_output/demo.mp4`, an overview image, the run log and a summary):
 
 ```bash
 python main.py --model-dir robotis_mujoco_menagerie/robotis_tb3
+python main.py --live          # watch it run: MuJoCo viewer plus a window with the LiDAR scan and the camera
 ```
 
-The robot navigates an S-shaped course of three boards it does not know about, using the LiDAR, the EKF (wheel encoders and the camera marker pose) and an LQR tracker, and docks at the ArUco-marked station. Options: `--seed N` (start offset and noise), `--variant C|table|B` (odometry model), `--no-video`, and `--live` to watch the run in the MuJoCo viewer in real time (cyan: LiDAR beams, red: estimated pose, purple: current plan) with a second window showing what the robot senses: the LiDAR scan around the robot and the camera with the detected marker (`--view map` shows the map the robot builds and its plan instead; `--no-dashboard` turns it off); the viewer stays open until closed. The exit code is 0 when the robot docked within the provisional tolerance without touching anything. If `--model-dir` is omitted the script searches common places and the environment variable `TB3_MODEL_DIR`.
+The robot navigates an S-shaped course of three boards it does not know about, using the LiDAR, the EKF (wheel encoders and the camera marker pose) and an LQR tracker, and docks at the ArUco-marked station. Other layouts and tests: `--scenario s_course|s_mirrored|gate|scattered|u_trap|north_station|empty|chicane|facing_away`, `--disturbance none|lidar_x3|start_x3|dropout50|radius+5|push`, `--marker-unknown 0.3` (the robot is not given the marker position), `--pipeline simple` (no map or planner). Options: `--seed N` (start offset and noise), `--variant C|table|B` (odometry model), `--no-video`, and `--live` to watch the run in the MuJoCo viewer in real time (cyan: LiDAR beams, red: estimated pose, purple: current plan) with a second window showing what the robot senses: the LiDAR scan around the robot and the camera with the detected marker (`--view map` shows the map the robot builds and its plan instead; `--no-dashboard` turns it off); the viewer stays open until closed. The exit code is 0 when the robot docked within the provisional tolerance without touching anything. If `--model-dir` is omitted the script searches common places and the environment variable `TB3_MODEL_DIR`.
 
 Run the tests:
 
@@ -89,10 +102,6 @@ All numbers are in [docs/findings.md](docs/findings.md) with the conditions and 
 - On three independent paths a fixed-gain filter whose gains were measured on arcs (a table over speed and yaw rate) was the most accurate and most robust (final test path: 42 mm position RMSE), clearly better than a single-point calibration (133 mm). Estimating constant gains online (B) was not better than the table (114 mm on the final test path) and once produced a 1.4 m excursion; a table with an online correction (C) improves consistency but not reliably accuracy. These results are from a simulator in which the table can be calibrated ideally, so they do not transfer directly to hardware.
 - An anisotropic marker noise model was worse than the isotropic one on all three paths and should not be used.
 - Every variant tested is overconfident on MuJoCo data (best ANEES 7 against an ideal 3). The marker pose error has a systematic part and is correlated between frames, which the filter does not model.
-
-## Demo video
-
-Not yet made. A 40 s visualisation of a logged run is generated by `experiments/visualize_run.py`.
 
 ## Contribution statement
 
