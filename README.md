@@ -109,7 +109,7 @@ Individual project (42043), single author: Hongjie Zheng.
 
 ## Generative AI declaration
 
-Claude (Anthropic), through Claude Code, was used throughout this project as a coding assistant. It wrote most of the code and tests in this repository, ran the experiments that can run locally, helped diagnose failures, and drafted the findings log. The author directed the work and made the choices between options, ran the Colab notebooks and reported their outputs, reviewed the results and is responsible for the submission. Commits made with Claude carry a `Co-Authored-By` line.
+Claude (Anthropic), through Claude Code, was used throughout this project as a coding assistant. It wrote most of the code and tests in this repository, ran the experiments that can run locally, helped diagnose failures, and drafted the findings log. The author directed the work and made the choices between options, ran the Colab notebooks and reported their outputs, reviewed the results and is responsible for the submission.
 
 ## Acknowledgements
 
