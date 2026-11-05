@@ -8,7 +8,7 @@ A TurtleBot3 with a 2D LiDAR and a camera in MuJoCo navigates a room with obstac
 
 ## Demo video
 
-**Video:** _link to be added_ (5 minutes: the live run, then modelling, sensing, estimation, control and robustness).
+**Video:** https://youtu.be/aT5Kv-MqD9I (4:58: the live run, then modelling, sensing, estimation, control and robustness).
 
 ## Key results (simulation, MuJoCo 3.3.7)
 
