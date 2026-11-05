@@ -67,6 +67,7 @@ def main():
                                                                  "on the map (evaluation only; the robot does not know them)")
     ap.add_argument("--no-dashboard", action="store_true", help="with --live: no 2D map and camera window, only the MuJoCo viewer")
     ap.add_argument("--speedup", type=float, default=1.0, help="with --live: simulated seconds per wall-clock second (1 = real time)")
+    ap.add_argument("--recalibrate", action="store_true", help="measure the odometry gain table again instead of reusing the saved one")
     args = ap.parse_args()
     sys.stdout.reconfigure(line_buffering=True)
 
@@ -97,9 +98,19 @@ def main():
     if args.variant == "B":
         models = dict(gain_fn=None, estimate_scales=True)
     else:
-        print("[1/3] measuring the odometry gain table on short arcs in an empty room ...", flush=True)
-        calib_cfg = SceneConfig(room_x=8.0, room_y=8.0, obstacles=(), station_x=3.5, marker_texture_type=scene_cfg.marker_texture_type)
-        gain_fn, _ = calibrate_gain_table(MujocoTB3Driver(write_scene(calib_cfg, model_dir, scene_name=f"scene_demo_calib_{os.getpid()}.xml")), RunConfig())
+        from sim.mujoco_run import make_gain_fn
+
+        # the table only depends on the simulator, so a measured table is reused (same MuJoCo version) unless --recalibrate
+        cache = out / f"gain_table_mujoco_{mujoco.__version__}.npz"
+        if cache.exists() and not args.recalibrate:
+            t = np.load(cache)
+            gain_fn = make_gain_fn(t["speeds"], t["yaw_rates"], t["s_v"], t["s_w"])
+            print(f"[1/3] odometry gain table loaded from {cache} (measured earlier on short arcs; --recalibrate measures it again)", flush=True)
+        else:
+            print("[1/3] measuring the odometry gain table on short arcs in an empty room ...", flush=True)
+            calib_cfg = SceneConfig(room_x=8.0, room_y=8.0, obstacles=(), station_x=3.5, marker_texture_type=scene_cfg.marker_texture_type)
+            gain_fn, table = calibrate_gain_table(MujocoTB3Driver(write_scene(calib_cfg, model_dir, scene_name=f"scene_demo_calib_{os.getpid()}.xml")), RunConfig())
+            np.savez(cache, **{k: np.asarray(v) for k, v in table.items()})
         models = dict(gain_fn=gain_fn, estimate_scales=args.variant == "C")
 
     spec = DockSpec()
